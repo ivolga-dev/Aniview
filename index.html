@@ -4,121 +4,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AniView NextGen</title>
+    <title>AniView v5.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #05070a; color: #e6edf3; font-family: -apple-system, system-ui, sans-serif; }
-        .glass { background: #0d1117; border: 1px solid #30363d; border-radius: 24px; }
-        .terminal-text { font-family: 'ui-monospace', monospace; font-size: 10px; }
-        .btn-glow { box-shadow: 0 0 20px rgba(35, 134, 54, 0.2); }
-        iframe { border-radius: 16px; background: #000; transition: all 0.3s ease; }
+        body { background: #05070a; color: #e6edf3; font-family: system-ui, sans-serif; overflow-x: hidden; }
+        .glass { background: #0d1117; border: 1px solid #30363d; border-radius: 20px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        iframe { border-radius: 12px; background: #000; }
+        .log-line { font-family: monospace; font-size: 11px; opacity: 0.7; }
     </style>
 </head>
-<body class="p-4 sm:p-10">
+<body class="p-4 sm:p-6 lg:p-10">
     <div class="max-w-4xl mx-auto space-y-6">
         
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <!-- Top Info -->
+        <div class="flex justify-between items-end">
             <div>
-                <h1 id="anime-title" class="text-3xl font-black tracking-tighter uppercase italic text-white">AniView</h1>
+                <h1 id="anime-title" class="text-2xl font-black uppercase tracking-tighter text-white">AniView</h1>
                 <div class="flex items-center gap-2 mt-1">
-                    <span id="node-status" class="w-2 h-2 rounded-full bg-zinc-600 animate-pulse"></span>
-                    <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Secure Tunneling Active</span>
+                    <span id="api-status" class="status-dot bg-zinc-600"></span>
+                    <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Global Proxy Engine</span>
                 </div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="tryNextMirror()" class="px-4 py-2 glass text-[10px] font-bold uppercase hover:border-blue-500 transition">Сменить зеркало</button>
+            <div class="text-right">
+                <p class="text-[10px] text-zinc-600 font-bold uppercase italic">Status</p>
+                <p id="system-status" class="text-[10px] text-blue-500 font-bold uppercase">Ready</p>
             </div>
         </div>
 
-        <!-- Video Area -->
-        <div class="glass p-1.5 relative aspect-video shadow-2xl overflow-hidden group">
+        <!-- Main Player -->
+        <div class="glass p-1.5 relative aspect-video shadow-2xl">
             <iframe id="player" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay"></iframe>
             
-            <div id="loader" class="absolute inset-0 bg-[#05070a] flex flex-col items-center justify-center z-50">
-                <div class="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <p class="mt-4 terminal-text uppercase tracking-[0.4em] text-blue-500">Bypassing DNS Filters...</p>
+            <div id="loader" class="absolute inset-0 bg-[#05070a] flex flex-col items-center justify-center z-50 transition-opacity duration-500">
+                <div class="w-10 h-10 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p class="mt-4 text-[10px] font-mono tracking-widest text-blue-600 animate-pulse uppercase">Searching for mirrors...</p>
             </div>
         </div>
 
-        <!-- Log Panel -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="md:col-span-2 glass p-6 space-y-4 border-t-2 border-blue-900/30">
-                <p class="text-[10px] font-bold text-zinc-600 uppercase tracking-widest italic">Traffic Analysis</p>
-                <div id="log" class="terminal-text text-zinc-500 space-y-1 h-20 overflow-y-auto">
-                    <p>> Waiting for system signal...</p>
-                </div>
-            </div>
-            <button onclick="copyLink()" class="glass bg-blue-600/10 border-blue-500/30 hover:bg-blue-600/20 text-blue-400 font-bold text-[10px] uppercase tracking-widest transition active:scale-95">
+        <!-- Controls -->
+        <div class="flex flex-wrap gap-3">
+            <button onclick="tryNextMirror()" class="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition active:scale-95">
+                Сменить зеркало
+            </button>
+            <button onclick="copyRoom()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition active:scale-95">
                 Поделиться
             </button>
+        </div>
+
+        <!-- Logs -->
+        <div class="glass p-5 space-y-3">
+            <p class="text-[9px] font-bold text-zinc-600 uppercase tracking-[0.2em] border-b border-white/5 pb-2">Analysis Log</p>
+            <div id="log-container" class="h-20 overflow-y-auto space-y-1">
+                <p class="log-line">> System initialized.</p>
+            </div>
         </div>
     </div>
 
     <script>
         const API = "https://ivolga392-my-anime-api.hf.space";
         const params = new URLSearchParams(window.location.search);
-        const anime = params.get('title') || "Dr. Stone";
+        const animeQuery = params.get('title') || params.get('q') || "Dr. Stone";
         
-        let mirrors = [];
-        let currentIdx = 0;
+        let mirrorLinks = [];
+        let currentMirrorIdx = 0;
 
-        function addLog(msg, type = "info") {
-            const colors = { info: "text-zinc-500", success: "text-green-500", err: "text-red-500" };
-            const log = document.getElementById('log');
-            log.innerHTML += `<p class="${colors[type]}">> ${msg}</p>`;
+        function addLog(msg, color = "text-zinc-500") {
+            const log = document.getElementById('log-container');
+            log.innerHTML += `<p class="log-line ${color}">> ${msg}</p>`;
             log.scrollTop = log.scrollHeight;
         }
 
         async function init() {
-            document.getElementById('anime-title').innerText = anime;
-            addLog("Initializing secure handshake...");
+            document.getElementById('anime-title').innerText = animeQuery;
+            addLog(`Requesting: ${animeQuery}`);
 
             try {
-                const res = await fetch(API + "/");
-                if(res.ok) {
-                    document.getElementById('node-status').classList.replace('bg-zinc-600', 'bg-green-500');
-                    addLog("Node established: HuggingFace-Paris", "success");
+                const check = await fetch(API + "/");
+                if(check.ok) {
+                    document.getElementById('api-status').classList.replace('bg-zinc-600', 'bg-green-500');
+                    document.getElementById('system-status').innerText = "Online";
+                    addLog("Cloud Connection: ESTABLISHED", "text-green-500");
                 }
-            } catch(e) { addLog("Master Node unreachable", "err"); }
+            } catch(e) {
+                addLog("Cloud Offline. Using local fallback.", "text-red-500");
+            }
 
             try {
-                addLog(`Decrypting streams for "${anime}"...`);
-                const search = await fetch(`${API}/search?q=${encodeURIComponent(anime)}`);
-                const data = await search.json();
+                const response = await fetch(`${API}/search?q=${encodeURIComponent(animeQuery)}`);
+                const data = await response.json();
 
-                if(data.found) {
-                    mirrors = data.alternatives;
-                    loadMirror(0);
-                    addLog(`Found ${mirrors.length} secure mirrors.`);
+                const player = document.getElementById('player');
+                if(data.found && data.alternatives) {
+                    mirrorLinks = data.alternatives;
+                    player.src = mirrorLinks[0];
+                    addLog(`Success: Found ${mirrorLinks.length} streams.`, "text-blue-500");
                 } else {
-                    addLog("Direct ID not found. Using search mode.", "err");
-                    document.getElementById('player').src = `https://kodik.info/search?title=${encodeURIComponent(anime)}`;
+                    addLog("No direct streams. Entering Search Mode...", "text-yellow-500");
+                    player.src = `https://kodik.info/search?title=${encodeURIComponent(animeQuery)}&hide_selectors=true`;
                 }
-            } catch(e) { addLog("Network error during decryption", "err"); }
+            } catch(e) {
+                addLog("API Error. Emergency search active.", "text-red-500");
+                document.getElementById('player').src = `https://kodik.info/search?title=${encodeURIComponent(animeQuery)}`;
+            }
 
             setTimeout(() => {
                 document.getElementById('loader').style.opacity = '0';
                 setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
-            }, 3000);
-        }
-
-        function loadMirror(idx) {
-            if(!mirrors[idx]) return;
-            currentIdx = idx;
-            const domain = new URL(mirrors[idx]).hostname;
-            addLog(`Switching to mirror: ${domain}`, "success");
-            document.getElementById('player').src = mirrors[idx];
+            }, 2500);
         }
 
         function tryNextMirror() {
-            currentIdx = (currentIdx + 1) % mirrors.length;
-            loadMirror(currentIdx);
+            if(mirrorLinks.length < 2) {
+                addLog("No alternative mirrors found for this title.", "text-zinc-600");
+                return;
+            }
+            currentMirrorIdx = (currentMirrorIdx + 1) % mirrorLinks.length;
+            const domain = new URL(mirrorLinks[currentMirrorIdx]).hostname;
+            addLog(`Switched to: ${domain}`, "text-blue-400");
+            document.getElementById('player').src = mirrorLinks[currentMirrorIdx];
         }
 
-        function copyLink() {
+        function copyRoom() {
             navigator.clipboard.writeText(window.location.href);
-            addLog("System link copied.");
+            alert("Ссылка на комнату скопирована!");
         }
 
         window.onload = init;
