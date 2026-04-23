@@ -1,123 +1,124 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AniView Cloud</title>
+    <title>AniView NextGen</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #0a0c10; color: #f0f6fc; font-family: system-ui, -apple-system, sans-serif; }
-        .glass { background: #161b22; border: 1px solid #30363d; border-radius: 20px; }
-        .status-pill { padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-        .log-box { font-family: 'ui-monospace', 'SFMono-Regular', monospace; font-size: 11px; color: #8b949e; }
-        iframe { background: #000; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        body { background: #05070a; color: #e6edf3; font-family: -apple-system, system-ui, sans-serif; }
+        .glass { background: #0d1117; border: 1px solid #30363d; border-radius: 24px; }
+        .terminal-text { font-family: 'ui-monospace', monospace; font-size: 10px; }
+        .btn-glow { box-shadow: 0 0 20px rgba(35, 134, 54, 0.2); }
+        iframe { border-radius: 16px; background: #000; transition: all 0.3s ease; }
     </style>
 </head>
-<body class="p-4 md:p-10">
+<body class="p-4 sm:p-10">
     <div class="max-w-4xl mx-auto space-y-6">
         
         <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-                <h1 id="title-display" class="text-3xl font-black italic tracking-tighter text-white uppercase">AniView</h1>
-                <div class="flex items-center gap-3 mt-1">
-                    <div id="api-status" class="status-pill bg-zinc-800 text-zinc-500 italic">Connecting...</div>
-                    <div class="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Protocol: HTTPS/WSS</div>
+                <h1 id="anime-title" class="text-3xl font-black tracking-tighter uppercase italic text-white">AniView</h1>
+                <div class="flex items-center gap-2 mt-1">
+                    <span id="node-status" class="w-2 h-2 rounded-full bg-zinc-600 animate-pulse"></span>
+                    <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Secure Tunneling Active</span>
                 </div>
             </div>
-            <button onclick="location.reload()" class="p-3 glass hover:bg-zinc-800 transition active:scale-95">
-                <svg class="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-            </button>
+            <div class="flex gap-2">
+                <button onclick="tryNextMirror()" class="px-4 py-2 glass text-[10px] font-bold uppercase hover:border-blue-500 transition">Сменить зеркало</button>
+            </div>
         </div>
 
-        <!-- Video -->
-        <div class="glass p-2 relative aspect-video group">
-            <iframe id="main-frame" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+        <!-- Video Area -->
+        <div class="glass p-1.5 relative aspect-video shadow-2xl overflow-hidden group">
+            <iframe id="player" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay"></iframe>
             
-            <div id="loader" class="absolute inset-0 bg-[#0a0c10] flex flex-col items-center justify-center z-50 transition-opacity duration-700">
-                <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <p class="mt-4 text-[10px] font-bold tracking-[0.3em] text-blue-500 animate-pulse">SEARCHING DATABASE</p>
+            <div id="loader" class="absolute inset-0 bg-[#05070a] flex flex-col items-center justify-center z-50">
+                <div class="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <p class="mt-4 terminal-text uppercase tracking-[0.4em] text-blue-500">Bypassing DNS Filters...</p>
             </div>
         </div>
 
-        <!-- System Console -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="md:col-span-3 glass p-5 space-y-3">
-                <p class="text-[10px] font-bold text-zinc-600 uppercase tracking-widest italic border-b border-zinc-800 pb-2">Terminal Output</p>
-                <div id="console" class="log-box space-y-1 h-24 overflow-y-auto">
-                    <p>> Initializing AniView Cloud System...</p>
+        <!-- Log Panel -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2 glass p-6 space-y-4 border-t-2 border-blue-900/30">
+                <p class="text-[10px] font-bold text-zinc-600 uppercase tracking-widest italic">Traffic Analysis</p>
+                <div id="log" class="terminal-text text-zinc-500 space-y-1 h-20 overflow-y-auto">
+                    <p>> Waiting for system signal...</p>
                 </div>
             </div>
-            <div class="flex flex-col gap-3">
-                <button onclick="copyRoom()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl transition shadow-lg shadow-blue-900/20 active:scale-95">
-                    Share Room
-                </button>
-                <div class="flex-1 glass flex flex-col items-center justify-center">
-                    <p class="text-[9px] text-zinc-500 font-bold uppercase italic">Engine</p>
-                    <p class="text-[11px] text-zinc-300 font-mono">v4.0-STABLE</p>
-                </div>
-            </div>
+            <button onclick="copyLink()" class="glass bg-blue-600/10 border-blue-500/30 hover:bg-blue-600/20 text-blue-400 font-bold text-[10px] uppercase tracking-widest transition active:scale-95">
+                Поделиться
+            </button>
         </div>
     </div>
 
     <script>
-        const API_URL = "https://ivolga392-my-anime-api.hf.space";
+        const API = "https://ivolga392-my-anime-api.hf.space";
         const params = new URLSearchParams(window.location.search);
-        const query = params.get('title') || params.get('q') || "Dr. Stone";
+        const anime = params.get('title') || "Dr. Stone";
+        
+        let mirrors = [];
+        let currentIdx = 0;
 
-        function addLog(text, color = "text-zinc-500") {
-            const con = document.getElementById('console');
-            con.innerHTML += `<p class="${color}">> ${text}</p>`;
-            con.scrollTop = con.scrollHeight;
+        function addLog(msg, type = "info") {
+            const colors = { info: "text-zinc-500", success: "text-green-500", err: "text-red-500" };
+            const log = document.getElementById('log');
+            log.innerHTML += `<p class="${colors[type]}">> ${msg}</p>`;
+            log.scrollTop = log.scrollHeight;
         }
 
         async function init() {
-            document.getElementById('title-display').innerText = query;
-            addLog(`Requesting access for: ${query}`);
+            document.getElementById('anime-title').innerText = anime;
+            addLog("Initializing secure handshake...");
 
-            // 1. Проверка API
             try {
-                const res = await fetch(API_URL + "/");
+                const res = await fetch(API + "/");
                 if(res.ok) {
-                    const badge = document.getElementById('api-status');
-                    badge.innerText = "Cloud Active";
-                    badge.className = "status-pill bg-green-500/10 text-green-500 border border-green-500/20 italic";
-                    addLog("Cloud Connection: ESTABLISHED", "text-green-500");
+                    document.getElementById('node-status').classList.replace('bg-zinc-600', 'bg-green-500');
+                    addLog("Node established: HuggingFace-Paris", "success");
                 }
-            } catch (e) {
-                addLog("Cloud Connection: FAILED. Checking fallback mirrors...", "text-red-500");
-            }
+            } catch(e) { addLog("Master Node unreachable", "err"); }
 
-            // 2. Поиск контента
             try {
-                const searchRes = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}`);
-                const data = await searchRes.json();
+                addLog(`Decrypting streams for "${anime}"...`);
+                const search = await fetch(`${API}/search?q=${encodeURIComponent(anime)}`);
+                const data = await search.json();
 
-                const player = document.getElementById('main-frame');
-                
-                if (data.found && data.player) {
-                    player.src = data.player;
-                    addLog(`Success: Found "${data.title}"`, "text-blue-400");
+                if(data.found) {
+                    mirrors = data.alternatives;
+                    loadMirror(0);
+                    addLog(`Found ${mirrors.length} secure mirrors.`);
                 } else {
-                    addLog("Direct stream not found. Initializing Global Search...", "text-yellow-500");
-                    // Если API не нашел, используем встроенный поиск Kodik как запасной
-                    player.src = `https://kodik.info/search?title=${encodeURIComponent(query)}&hide_selectors=true`;
+                    addLog("Direct ID not found. Using search mode.", "err");
+                    document.getElementById('player').src = `https://kodik.info/search?title=${encodeURIComponent(anime)}`;
                 }
-            } catch (e) {
-                addLog("API Error. Using emergency mirror.", "text-red-400");
-                document.getElementById('main-frame').src = `https://kodik.info/search?title=${encodeURIComponent(query)}`;
-            }
+            } catch(e) { addLog("Network error during decryption", "err"); }
 
-            // 3. Убираем лоадер
             setTimeout(() => {
                 document.getElementById('loader').style.opacity = '0';
-                setTimeout(() => document.getElementById('loader').style.display = 'none', 700);
-            }, 2500);
+                setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+            }, 3000);
         }
 
-        function copyRoom() {
+        function loadMirror(idx) {
+            if(!mirrors[idx]) return;
+            currentIdx = idx;
+            const domain = new URL(mirrors[idx]).hostname;
+            addLog(`Switching to mirror: ${domain}`, "success");
+            document.getElementById('player').src = mirrors[idx];
+        }
+
+        function tryNextMirror() {
+            currentIdx = (currentIdx + 1) % mirrors.length;
+            loadMirror(currentIdx);
+        }
+
+        function copyLink() {
             navigator.clipboard.writeText(window.location.href);
-            addLog("Room link copied to clipboard.");
+            addLog("System link copied.");
         }
 
         window.onload = init;
