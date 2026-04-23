@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Shared View</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #0b0e14; color: #e2e8f0; font-family: ui-sans-serif, system-ui; }
+        .glass { background: rgba(23, 28, 38, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="flex flex-col items-center p-4 md:p-8 min-h-screen">
+    <div class="w-full max-w-5xl">
+        <!-- Шапка -->
+        <div class="glass p-6 rounded-2xl mb-6 flex justify-between items-center">
+            <div>
+                <h1 id="title" class="text-2xl font-bold text-blue-400 italic">Загрузка...</h1>
+                <p id="status" class="text-sm text-gray-500 mt-1">Комната синхронизации активна</p>
+            </div>
+            <div class="hidden md:block">
+                <span class="bg-blue-500/10 text-blue-400 px-4 py-2 rounded-full text-xs font-mono border border-blue-500/20">
+                    AD-BLOCK ACTIVE
+                </span>
+            </div>
+        </div>
+
+        <!-- Контейнер плеера -->
+        <div class="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/5 aspect-video mb-6">
+            <!-- Сюда можно интегрировать плеер Kodik или прямой MP4 -->
+            <iframe id="videoIframe" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <!-- Инфо-панель -->
+        <div class="grid md:grid-cols-2 gap-4">
+            <div class="glass p-6 rounded-2xl">
+                <h3 class="text-lg font-semibold mb-2">Как это работает?</h3>
+                <p class="text-sm text-gray-400">Плагин передает название аниме. Сайт автоматически находит чистый поток без рекламы. Нажмите на паузу, чтобы синхронизировать время у всех.</p>
+            </div>
+            <div class="glass p-6 rounded-2xl flex flex-col justify-center items-center text-center">
+                <p class="text-sm text-gray-500 mb-2">Поделиться комнатой:</p>
+                <button onclick="copyUrl()" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-xl transition font-medium">Копировать ссылку</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const animeTitle = params.get('title') || 'Неизвестное аниме';
+        const roomId = params.get('room') || 'global';
+
+        document.getElementById('title').innerText = decodeURIComponent(animeTitle.replace(/\+/g, ' '));
+
+        // Имитация поиска видео. В реальности здесь будет поиск по API (Kodik/Shikimori)
+        const iframe = document.getElementById('videoIframe');
+        // Пример: поиск через агрегатор (нужно заменить на рабочий API в продакшене)
+        iframe.src = `https://video.example.com/search?q=${animeTitle}`; 
+
+        function copyUrl() {
+            const tempInput = document.createElement("input");
+            tempInput.value = window.location.href;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            alert("Ссылка скопирована!");
+        }
+    </script>
+</body>
+</html>
