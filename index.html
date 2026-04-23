@@ -1,128 +1,157 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime Sync Player</title>
+    <title>Anime Sync Player | Seasons & Episodes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #05070a; color: #e2e8f0; font-family: ui-sans-serif, system-ui; }
-        .player-border { box-shadow: 0 0 30px rgba(59, 130, 246, 0.1); }
-        .cli-loader { border-right: 3px solid #3b82f6; animation: blink 0.7s infinite; }
-        @keyframes blink { 50% { border-color: transparent; } }
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        body { background: #080a0f; color: #e2e8f0; font-family: 'JetBrains+Mono', monospace; }
+        .glass { background: rgba(15, 18, 25, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
+        .accent-glow { box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
+        .loader-line { animation: load 2s infinite ease-in-out; }
+        @keyframes load { 0% { width: 0%; left: 0; } 50% { width: 100%; left: 0; } 100% { width: 0%; left: 100%; } }
     </style>
 </head>
-<body class="flex flex-col items-center min-h-screen p-4 md:p-10">
-    <div class="w-full max-w-5xl">
-        <!-- Заголовок -->
-        <div class="flex justify-between items-end mb-8 px-2">
+<body class="flex flex-col items-center min-h-screen p-4">
+    <div class="w-full max-w-6xl">
+        <!-- Шапка -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
-                <h1 id="animeTitle" class="text-3xl font-black text-white uppercase tracking-tighter">Initializing...</h1>
-                <p id="resultCount" class="text-xs text-blue-500 font-mono mt-1">ENGINE: KODIK_MIRROR_V3</p>
-            </div>
-            <div id="connectionStatus" class="hidden md:flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-full text-[10px] font-bold tracking-widest text-zinc-400">
-                <span id="statusDot" class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                <span id="statusText">CLI MODE ACTIVE</span>
-            </div>
-        </div>
-
-        <!-- Область плеера -->
-        <div class="player-border relative aspect-video bg-black rounded-3xl overflow-hidden border border-white/5">
-            <div id="loaderOverlay" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#05070a]">
-                <div class="w-48 h-1 bg-zinc-800 rounded-full overflow-hidden mb-4">
-                    <div id="progressBar" class="h-full bg-blue-600 w-0 transition-all duration-700"></div>
+                <h1 id="animeTitle" class="text-2xl font-bold text-white tracking-tighter uppercase">Waiting for input...</h1>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30 font-bold">V4.0 MULTI-SOURCE</span>
+                    <span id="seasonInfo" class="text-[10px] text-zinc-500">SEASONS: ENABLED</span>
                 </div>
-                <p id="loaderText" class="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.3em] cli-loader">Connecting to Mirror...</p>
-                <button id="manualBtn" onclick="openManual()" class="hidden mt-6 px-6 py-2 bg-white/5 border border-white/10 rounded-lg text-[10px] hover:bg-white/10 transition">
-                    ОТКРЫТЬ ВНЕ ФРЕЙМА (ЕСЛИ ЗАВИСЛО)
+            </div>
+            <div class="flex items-center gap-3 bg-zinc-900/80 p-2 rounded-xl border border-white/5">
+                <input id="searchInput" type="text" placeholder="Поиск аниме..." class="bg-transparent border-none outline-none text-xs px-2 w-40 text-white">
+                <button onclick="manualSearch()" class="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-lg transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </button>
             </div>
-            <!-- Используем aniqit.com вместо kodik.info для обхода блокировок фреймов -->
-            <iframe id="mainPlayer" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-        </div>
+        </header>
 
-        <!-- Вывод терминала -->
-        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="md:col-span-2 bg-zinc-900/40 border border-white/5 p-6 rounded-2xl">
-                <h2 class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Terminal Output</h2>
-                <div class="font-mono text-sm space-y-1 text-zinc-400">
-                    <p>> Target: <span id="queryPath" class="text-white">...</span></p>
-                    <p>> Mirror: <span class="text-blue-400">https://aniqit.com</span></p>
-                    <p>> Bypass: <span class="text-green-500">Enabled</span></p>
+        <!-- Основной экран -->
+        <main class="relative aspect-video rounded-3xl overflow-hidden glass accent-glow border border-white/10 mb-6 bg-black">
+            <div id="loader" class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#080a0f]">
+                <div class="w-64 h-0.5 bg-zinc-800 relative overflow-hidden mb-4">
+                    <div class="loader-line absolute h-full bg-blue-500"></div>
+                </div>
+                <p id="statusText" class="text-[10px] uppercase tracking-[0.4em] text-zinc-500 animate-pulse">Scanning Mirror Assets...</p>
+                
+                <!-- Блок помощи при блокировке -->
+                <div id="dnsHelp" class="hidden mt-8 p-4 border border-red-500/20 bg-red-500/5 rounded-xl max-w-sm text-center">
+                    <p class="text-[10px] text-red-400 mb-3 uppercase font-bold">Ошибка доступа к зеркалу</p>
+                    <p class="text-[11px] text-zinc-400 mb-4 italic">Домен заблокирован вашим провайдером.</p>
+                    <button onclick="tryAlternative()" class="w-full bg-zinc-800 py-2 rounded-lg text-[10px] font-bold hover:bg-zinc-700 transition mb-2">ПОПРОБОВАТЬ ЗЕРКАЛО #2</button>
+                    <button onclick="openExternal()" class="w-full bg-blue-600/20 text-blue-400 py-2 rounded-lg text-[10px] font-bold hover:bg-blue-600/30 transition">ОТКРЫТЬ В БРАУЗЕРЕ</button>
                 </div>
             </div>
-            <div class="flex flex-col gap-3 text-[11px] font-bold">
-                <button onclick="location.reload()" class="h-full bg-zinc-800 hover:bg-zinc-700 transition rounded-xl py-4 border border-white/5">🔄 ПЕРЕЗАГРУЗИТЬ</button>
-                <button onclick="copyUrl()" class="h-full bg-blue-600 hover:bg-blue-500 transition rounded-xl py-4">🔗 ПОДЕЛИТЬСЯ</button>
+            
+            <iframe id="player" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+        </main>
+
+        <!-- Информация -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="md:col-span-3 glass p-6 rounded-2xl">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path></svg>
+                    </div>
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-zinc-300">Terminal Control</h3>
+                </div>
+                <div class="space-y-2 text-[11px] text-zinc-500 font-mono">
+                    <p>> Выбор серии: <span class="text-green-500 underline cursor-pointer" onclick="alert('Используйте кнопку списка в самом плеере!')">Кнопка в плеере (верхний правый угол)</span></p>
+                    <p>> Выбор сезона: <span class="text-blue-400 italic">Автоматически подгружается в списке</span></p>
+                    <p>> Доступные зеркала: <span id="mirrorList">aniqit.com, kodik.info, dwn.st</span></p>
+                </div>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button onclick="location.reload()" class="flex-1 glass hover:bg-white/5 transition rounded-2xl font-bold text-[11px] uppercase tracking-wider">Обновить</button>
+                <button onclick="copyLink()" class="flex-1 bg-blue-600 hover:bg-blue-500 transition rounded-2xl font-bold text-[11px] uppercase tracking-wider text-white">Поделиться</button>
             </div>
         </div>
     </div>
 
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const title = params.get('title') || '';
-        let currentLink = "";
+        const urlParams = new URLSearchParams(window.location.search);
+        const query = urlParams.get('title') || '';
         
-        const mainPlayer = document.getElementById('mainPlayer');
-        const loaderOverlay = document.getElementById('loaderOverlay');
-        const progressBar = document.getElementById('progressBar');
-        const loaderText = document.getElementById('loaderText');
+        const player = document.getElementById('player');
+        const loader = document.getElementById('loader');
+        const animeTitle = document.getElementById('animeTitle');
+        const statusText = document.getElementById('statusText');
+        const dnsHelp = document.getElementById('dnsHelp');
 
-        function updateLoader(text, p) {
-            loaderText.innerText = text;
-            progressBar.style.width = p + "%";
+        let currentMirrorIndex = 0;
+        const mirrors = [
+            "https://aniqit.com",
+            "https://kodik.info",
+            "https://adshost.me",
+            "https://vjs.sh"
+        ];
+
+        function manualSearch() {
+            const val = document.getElementById('searchInput').value;
+            if(val) window.location.href = `?title=${encodeURIComponent(val)}`;
         }
 
-        function openManual() {
-            if (currentLink) window.open(currentLink, '_blank');
+        function updateStatus(text) {
+            statusText.innerText = text;
         }
 
-        async function init() {
-            if (!title) {
-                loaderText.innerText = "Error: Query empty";
-                return;
-            }
-
-            document.getElementById('animeTitle').innerText = title;
-            document.getElementById('queryPath').innerText = title.replace(/\s+/g, '_').toLowerCase();
-
-            updateLoader("Searching mirror...", 40);
+        function loadStream(q, mirrorBase) {
+            updateStatus(`Requesting stream from ${new URL(mirrorBase).hostname}...`);
+            // Параметр hide_selectors=false позволяет видеть выбор серий/озвучек
+            const url = `${mirrorBase}/search?title=${encodeURIComponent(q)}&hide_selectors=false`;
+            player.src = url;
             
-            // Используем aniqit.com - это стабильное зеркало для РФ
-            currentLink = `https://aniqit.com/search?title=${encodeURIComponent(title)}&hide_selectors=true`;
-            mainPlayer.src = currentLink;
-
-            updateLoader("Establishing SSL...", 70);
-            
-            // Если через 7 секунд не загрузилось - показываем кнопку помощи
+            // Проверка на "человечка" / блокировку
             setTimeout(() => {
-                document.getElementById('manualBtn').classList.remove('hidden');
-                loaderText.innerText = "Waiting for player response...";
-            }, 7000);
-
-            setTimeout(() => {
-                updateLoader("Done", 100);
-                setTimeout(() => {
-                    loaderOverlay.style.opacity = '0';
-                    setTimeout(() => loaderOverlay.style.display = 'none', 500);
-                    document.getElementById('statusDot').classList.replace('bg-blue-500', 'bg-green-500');
-                    document.getElementById('statusText').innerText = "STREAM ONLINE";
-                }, 500);
-            }, 1500);
+                dnsHelp.classList.remove('hidden');
+                updateStatus("Waiting for response...");
+            }, 6000);
         }
 
-        function copyUrl() {
+        function tryAlternative() {
+            currentMirrorIndex = (currentMirrorIndex + 1) % mirrors.length;
+            loadStream(query, mirrors[currentMirrorIndex]);
+            dnsHelp.classList.add('hidden');
+        }
+
+        function openExternal() {
+            const link = mirrors[currentMirrorIndex] + "/search?title=" + encodeURIComponent(query);
+            window.open(link, '_blank');
+        }
+
+        function copyLink() {
             const el = document.createElement('textarea');
             el.value = window.location.href;
             document.body.appendChild(el);
             el.select();
             document.execCommand('copy');
             document.body.removeChild(el);
-            alert("Ссылка скопирована!");
+            alert("Ссылка на комнату скопирована!");
         }
 
-        window.onload = init;
+        window.onload = () => {
+            if(query) {
+                animeTitle.innerText = query;
+                loadStream(query, mirrors[0]);
+                
+                // Убираем лоадер через 2 сек, чтобы пользователь видел плеер (даже если там ошибка DNS, чтобы нажать кнопку)
+                setTimeout(() => {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                }, 2500);
+            } else {
+                updateStatus("Введите название в поиске");
+                loader.classList.add('hidden');
+                animeTitle.innerText = "Anime Viewer CLI";
+            }
+        };
     </script>
 </body>
 </html>
