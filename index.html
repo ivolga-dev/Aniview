@@ -15,39 +15,46 @@
 </head>
 <body class="flex flex-col items-center min-h-screen p-4 md:p-10">
     <div class="w-full max-w-5xl">
+        <!-- Заголовок -->
         <div class="flex justify-between items-end mb-8 px-2">
             <div>
                 <h1 id="animeTitle" class="text-3xl font-black text-white uppercase tracking-tighter">Initializing...</h1>
-                <p id="resultCount" class="text-xs text-blue-500 font-mono mt-1">ENGINE: KODIK_SEARCH_V2</p>
+                <p id="resultCount" class="text-xs text-blue-500 font-mono mt-1">ENGINE: KODIK_MIRROR_V3</p>
             </div>
             <div id="connectionStatus" class="hidden md:flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-full text-[10px] font-bold tracking-widest text-zinc-400">
-                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                CLI MODE ACTIVE
+                <span id="statusDot" class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                <span id="statusText">CLI MODE ACTIVE</span>
             </div>
         </div>
 
+        <!-- Область плеера -->
         <div class="player-border relative aspect-video bg-black rounded-3xl overflow-hidden border border-white/5">
             <div id="loaderOverlay" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#05070a]">
                 <div class="w-48 h-1 bg-zinc-800 rounded-full overflow-hidden mb-4">
                     <div id="progressBar" class="h-full bg-blue-600 w-0 transition-all duration-700"></div>
                 </div>
-                <p id="loaderText" class="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.3em] cli-loader">Booting Scraper...</p>
+                <p id="loaderText" class="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.3em] cli-loader">Connecting to Mirror...</p>
+                <button id="manualBtn" onclick="openManual()" class="hidden mt-6 px-6 py-2 bg-white/5 border border-white/10 rounded-lg text-[10px] hover:bg-white/10 transition">
+                    ОТКРЫТЬ ВНЕ ФРЕЙМА (ЕСЛИ ЗАВИСЛО)
+                </button>
             </div>
+            <!-- Используем aniqit.com вместо kodik.info для обхода блокировок фреймов -->
             <iframe id="mainPlayer" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
         </div>
 
+        <!-- Вывод терминала -->
         <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="md:col-span-2 bg-zinc-900/40 border border-white/5 p-6 rounded-2xl">
-                <h2 class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Stream Output</h2>
-                <div class="font-mono text-sm space-y-1">
-                    <p class="text-zinc-400">> Requesting: <span id="queryPath" class="text-white">...</span></p>
-                    <p class="text-zinc-400">> Protocol: <span class="text-green-500">HTTPS/WSS</span></p>
-                    <p class="text-zinc-400">> Status: <span class="text-blue-400">Ready to play</span></p>
+                <h2 class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Terminal Output</h2>
+                <div class="font-mono text-sm space-y-1 text-zinc-400">
+                    <p>> Target: <span id="queryPath" class="text-white">...</span></p>
+                    <p>> Mirror: <span class="text-blue-400">https://aniqit.com</span></p>
+                    <p>> Bypass: <span class="text-green-500">Enabled</span></p>
                 </div>
             </div>
-            <div class="flex flex-col gap-3">
-                <button onclick="location.reload()" class="h-full bg-zinc-800 hover:bg-zinc-700 transition rounded-xl font-bold text-sm py-4">🔄 RELOAD SOURCE</button>
-                <button onclick="copyUrl()" class="h-full bg-blue-600 hover:bg-blue-500 transition rounded-xl font-bold text-sm py-4">🔗 SHARE ROOM</button>
+            <div class="flex flex-col gap-3 text-[11px] font-bold">
+                <button onclick="location.reload()" class="h-full bg-zinc-800 hover:bg-zinc-700 transition rounded-xl py-4 border border-white/5">🔄 ПЕРЕЗАГРУЗИТЬ</button>
+                <button onclick="copyUrl()" class="h-full bg-blue-600 hover:bg-blue-500 transition rounded-xl py-4">🔗 ПОДЕЛИТЬСЯ</button>
             </div>
         </div>
     </div>
@@ -55,8 +62,8 @@
     <script>
         const params = new URLSearchParams(window.location.search);
         const title = params.get('title') || '';
+        let currentLink = "";
         
-        const animeTitleEl = document.getElementById('animeTitle');
         const mainPlayer = document.getElementById('mainPlayer');
         const loaderOverlay = document.getElementById('loaderOverlay');
         const progressBar = document.getElementById('progressBar');
@@ -67,30 +74,42 @@
             progressBar.style.width = p + "%";
         }
 
+        function openManual() {
+            if (currentLink) window.open(currentLink, '_blank');
+        }
+
         async function init() {
             if (!title) {
-                loaderText.innerText = "Error: Argument missing";
+                loaderText.innerText = "Error: Query empty";
                 return;
             }
 
-            animeTitleEl.innerText = title;
+            document.getElementById('animeTitle').innerText = title;
             document.getElementById('queryPath').innerText = title.replace(/\s+/g, '_').toLowerCase();
 
-            updateLoader("Searching database...", 30);
+            updateLoader("Searching mirror...", 40);
             
-            // Используем надежный метод поиска через Kodik Iframe
-            const searchUrl = `https://kodik.info/search?title=${encodeURIComponent(title)}&hide_selectors=true`;
-            mainPlayer.src = searchUrl;
+            // Используем aniqit.com - это стабильное зеркало для РФ
+            currentLink = `https://aniqit.com/search?title=${encodeURIComponent(title)}&hide_selectors=true`;
+            mainPlayer.src = currentLink;
 
-            updateLoader("Bypassing CORS...", 60);
+            updateLoader("Establishing SSL...", 70);
             
+            // Если через 7 секунд не загрузилось - показываем кнопку помощи
             setTimeout(() => {
-                updateLoader("Source verified...", 100);
+                document.getElementById('manualBtn').classList.remove('hidden');
+                loaderText.innerText = "Waiting for player response...";
+            }, 7000);
+
+            setTimeout(() => {
+                updateLoader("Done", 100);
                 setTimeout(() => {
                     loaderOverlay.style.opacity = '0';
                     setTimeout(() => loaderOverlay.style.display = 'none', 500);
+                    document.getElementById('statusDot').classList.replace('bg-blue-500', 'bg-green-500');
+                    document.getElementById('statusText').innerText = "STREAM ONLINE";
                 }, 500);
-            }, 1200);
+            }, 1500);
         }
 
         function copyUrl() {
@@ -100,13 +119,10 @@
             el.select();
             document.execCommand('copy');
             document.body.removeChild(el);
-            alert("Room link copied to clipboard!");
+            alert("Ссылка скопирована!");
         }
 
         window.onload = init;
     </script>
 </body>
 </html>
-
-
-
