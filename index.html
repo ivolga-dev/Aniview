@@ -1,140 +1,144 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime View Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AniView Sync</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #05070a; color: #e1e1e1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { background: #0d1117; border: 1px solid #21262d; border-radius: 24px; }
-        .btn-primary { background: #1f6feb; transition: all 0.2s; }
-        .btn-primary:hover { background: #388bfd; transform: translateY(-1px); }
-        .status-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        body { background: #0a0c10; color: #f0f6fc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; overflow-x: hidden; }
+        .glass { background: #161b22; border: 1px solid #30363d; border-radius: 16px; }
+        .accent-border { border-left: 4px solid #2f81f7; }
+        .shimmer { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        iframe { border-radius: 12px; }
         
-        /* Анимация загрузки */
-        .loader {
-            width: 48px;
-            height: 48px;
-            border: 3px solid #1f6feb;
-            border-bottom-color: transparent;
-            border-radius: 50%;
-            display: inline-block;
-            box-sizing: border-box;
-            animation: rotation 1s linear infinite;
-        }
-        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Улучшение тач-зон для мобилок */
+        button { touch-action: manipulation; }
     </style>
 </head>
-<body class="p-4 md:p-8 min-h-screen flex flex-col items-center">
-    <div class="w-full max-w-4xl space-y-6">
+<body class="p-4 sm:p-8">
+    <div class="max-w-3xl mx-auto space-y-6">
         
-        <!-- Header -->
-        <div class="flex justify-between items-center bg-[#0d1117] p-4 rounded-2xl border border-[#21262d]">
-            <div>
-                <h1 id="anime-title" class="text-xl font-black uppercase tracking-tighter italic text-white">Loading...</h1>
-                <div class="flex items-center gap-2 mt-1">
-                    <span id="api-status" class="w-2 h-2 rounded-full bg-red-500"></span>
-                    <span class="status-tag text-zinc-500">Cloud Engine: <span id="status-text">Connecting</span></span>
-                </div>
-            </div>
-            <button onclick="location.reload()" class="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-            </button>
-        </div>
-
-        <!-- Player -->
-        <div class="card overflow-hidden shadow-2xl relative aspect-video bg-black">
-            <iframe id="video-frame" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
-            
-            <div id="player-overlay" class="absolute inset-0 bg-[#05070a] flex flex-col items-center justify-center space-y-4">
-                <span class="loader"></span>
-                <p class="status-tag text-zinc-400">Синхронизация с облаком...</p>
+        <!-- Заголовок и статус -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h1 id="anime-name" class="text-2xl sm:text-3xl font-bold tracking-tight uppercase truncate max-w-[80%]">AniView</h1>
+            <div id="status-badge" class="inline-flex items-center w-fit px-2 py-1 rounded text-[10px] font-bold bg-zinc-800 text-zinc-400">
+                <span id="api-dot" class="w-1.5 h-1.5 rounded-full bg-zinc-600 mr-2"></span>
+                <span id="status-text">CONNECTING...</span>
             </div>
         </div>
 
-        <!-- Controls -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="card p-6 flex flex-col justify-center">
-                <p class="status-tag text-zinc-500 mb-2">Обход блокировок</p>
-                <div class="flex gap-2">
-                    <button onclick="switchMirror()" class="btn-primary text-white text-xs font-bold py-3 px-6 rounded-xl flex-1 uppercase">Следующий источник</button>
+        <!-- Плеер -->
+        <div class="glass overflow-hidden aspect-video relative shadow-2xl bg-black">
+            <iframe id="main-player" class="w-full h-full border-none" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+            
+            <!-- Заставка загрузки -->
+            <div id="overlay" class="absolute inset-0 bg-[#0a0c10] flex flex-col items-center justify-center space-y-4">
+                <div class="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-[10px] font-mono tracking-widest text-zinc-500 shimmer uppercase">Облачный поиск...</p>
+            </div>
+        </div>
+
+        <!-- Лог и управление -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2 glass p-4 sm:p-6 accent-border">
+                <h3 class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3 italic">System Console</h3>
+                <div id="log" class="font-mono text-[10px] sm:text-[11px] text-zinc-500 space-y-1 max-h-24 overflow-y-auto">
+                    <p>> Инициализация AniView...</p>
                 </div>
             </div>
             
-            <div class="card p-6">
-                <p class="status-tag text-zinc-500 mb-2">Лог системы</p>
-                <div id="logs" class="text-[10px] font-mono text-zinc-400 space-y-1">
-                    <p>> Инициализация...</p>
-                </div>
+            <div class="flex flex-col gap-2">
+                <button onclick="location.reload()" class="flex-1 py-3 glass font-bold text-[10px] uppercase hover:bg-zinc-800 transition active:scale-95">
+                    Обновить
+                </button>
+                <button onclick="copyCurrentUrl()" class="flex-1 py-3 bg-blue-600 rounded-xl font-bold text-[10px] uppercase hover:bg-blue-500 transition text-white active:scale-95">
+                    Поделиться
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- ЗАМЕНИ ЭТО НА СВОЮ ССЫЛКУ ИЗ HUGGING FACE ---
+        // ТВОЯ ССЫЛКА НА HUGGING FACE
         const API_URL = "https://ivolga392-my-anime-api.hf.space";
-
-        const mirrors = [
-            "https://aniqit.com",
-            "https://kodik.info",
-            "https://linkst.pro",
-            "https://dwn.st"
-        ];
-        let mirrorIdx = 0;
-
+        
         const params = new URLSearchParams(window.location.search);
-        const title = params.get('title') || "Dr. Stone";
+        // Поддержка параметров 'title', 'search' или 'q'
+        const title = params.get('title') || params.get('search') || params.get('q') || "Dr. Stone";
 
-        function addLog(msg) {
-            const logs = document.getElementById('logs');
-            logs.innerHTML += `<p>> ${msg}</p>`;
+        function addLog(text) {
+            const logEl = document.getElementById('log');
+            const time = new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            logEl.innerHTML += `<p class="truncate"><span class="text-zinc-700">[${time}]</span> ${text}</p>`;
+            logEl.scrollTop = logEl.scrollHeight;
         }
 
-        async function init() {
-            document.getElementById('anime-title').innerText = title;
-            addLog(`Запрос: ${title}`);
+        async function start() {
+            document.getElementById('anime-name').innerText = title;
 
-            // Проверка API
+            // 1. Проверка бэкенда на Hugging Face
             try {
                 const res = await fetch(API_URL + "/");
-                if(res.ok) {
-                    document.getElementById('api-status').classList.replace('bg-red-500', 'bg-green-500');
-                    document.getElementById('status-text').innerText = "Online";
-                    document.getElementById('status-text').classList.add('text-green-500');
-                    addLog("Связь с HuggingFace установлена");
+                if (res.ok) {
+                    document.getElementById('status-badge').className = "inline-flex items-center w-fit px-2 py-1 rounded text-[10px] font-bold bg-green-900/10 text-green-500 border border-green-900/30";
+                    document.getElementById('api-dot').className = "w-1.5 h-1.5 rounded-full bg-green-500 mr-2";
+                    document.getElementById('status-text').innerText = "CLOUD ACTIVE";
+                    addLog("Связь с облаком HF установлена.");
                 }
             } catch (e) {
-                addLog("Ошибка API: Space засыпает или недоступен");
+                addLog("ОШИБКА: Облако недоступно. Space спит?");
             }
 
-            loadVideo();
-        }
+            // 2. Получение ссылки на плеер
+            addLog(`Поиск потоков для: ${title}`);
+            try {
+                const search = await fetch(`${API_URL}/search?q=${encodeURIComponent(title)}`);
+                const data = await search.json();
 
-        function loadVideo() {
-            const currentMirror = mirrors[mirrorIdx];
-            const frame = document.getElementById('video-frame');
-            const overlay = document.getElementById('player-overlay');
+                if (data.found || (data.items && data.items.length > 0)) {
+                    let finalUrl = data.player || data.items[0].link;
+                    if (finalUrl.startsWith('//')) finalUrl = 'https:' + finalUrl;
+                    
+                    document.getElementById('main-player').src = finalUrl;
+                    addLog("Поток успешно захвачен.");
+                } else {
+                    addLog("НИЧЕГО НЕ НАЙДЕНО. Попробуйте уточнить название.");
+                    // Fallback на поиск по названию внутри плеера
+                    document.getElementById('main-player').src = `https://kodik.info/search?title=${encodeURIComponent(title)}`;
+                }
+            } catch (e) {
+                addLog("ОШИБКА API. Используем локальное зеркало...");
+                document.getElementById('main-player').src = `https://kodik.info/search?title=${encodeURIComponent(title)}`;
+            }
 
-            addLog(`Пробуем зеркало: ${new URL(currentMirror).hostname}`);
-            
-            // Основная стратегия: поиск через зеркало
-            frame.src = `${currentMirror}/search?title=${encodeURIComponent(title)}&hide_selectors=false`;
-
+            // 3. Скрываем лоадер через небольшую паузу
             setTimeout(() => {
+                const overlay = document.getElementById('overlay');
+                overlay.style.transition = 'opacity 0.5s ease';
                 overlay.style.opacity = '0';
                 setTimeout(() => overlay.style.display = 'none', 500);
             }, 2500);
         }
 
-        function switchMirror() {
-            mirrorIdx = (mirrorIdx + 1) % mirrors.length;
-            document.getElementById('player-overlay').style.display = 'flex';
-            document.getElementById('player-overlay').style.opacity = '1';
-            loadVideo();
+        function copyCurrentUrl() {
+            const url = window.location.href;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(() => alert("Ссылка скопирована!"));
+            } else {
+                const input = document.createElement('input');
+                input.value = url;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                alert("Ссылка скопирована!");
+            }
         }
 
-        window.onload = init;
+        window.onload = start;
     </script>
 </body>
 </html>
