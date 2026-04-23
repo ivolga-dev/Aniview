@@ -4,58 +4,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AniView X</title>
+    <title>AniView Direct</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключаем HLS.js для прямой трансляции потоков, если найдем их -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body { background: #080a0c; color: #ced4da; font-family: 'Segoe UI', system-ui, sans-serif; }
-        .glass-panel { background: #111418; border: 1px solid #2d333b; border-radius: 24px; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .terminal { font-family: 'Courier New', monospace; font-size: 11px; color: #8b949e; }
-        iframe { border-radius: 16px; background: #000; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .btn-action { transition: all 0.2s ease; border-radius: 14px; text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+        body { background: #000; color: #555; font-family: 'Inter', sans-serif; }
+        .player-wrap { position: relative; aspect-ratio: 16/9; background: #050505; border: 1px solid #111; border-radius: 16px; overflow: hidden; }
+        .btn-control { background: #0a0a0a; border: 1px solid #1a1a1a; transition: 0.3s; }
+        .btn-control:hover { background: #111; border-color: #333; color: #fff; }
+        .log-box { font-family: 'JetBrains Mono', monospace; font-size: 10px; height: 100px; overflow-y: auto; }
     </style>
 </head>
-<body class="p-5 md:p-12">
-    <div class="max-w-4xl mx-auto space-y-8">
+<body class="p-4 md:p-12">
+    <div class="max-w-5xl mx-auto space-y-6">
         
         <!-- Header -->
-        <div class="flex justify-between items-start">
-            <div class="space-y-1">
-                <h1 id="header-title" class="text-3xl font-black italic tracking-tighter text-white uppercase">ANIVIEW_X</h1>
-                <div class="flex items-center gap-3">
-                    <div id="conn-dot" class="status-dot bg-zinc-600"></div>
-                    <p id="conn-text" class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-blue-500">Connecting to Cloud...</p>
-                </div>
+        <div class="flex justify-between items-end px-2">
+            <div>
+                <h1 id="anime-title" class="text-2xl font-black text-white italic tracking-tighter uppercase">Initializing...</h1>
+                <p id="status-line" class="text-[9px] font-bold text-zinc-700 tracking-[0.3em] mt-1 uppercase">Node: DISCONNECTED</p>
             </div>
-            <div class="text-right hidden sm:block">
-                <p class="text-[9px] text-zinc-600 font-bold uppercase italic">Protocol</p>
-                <p class="text-xs text-zinc-400 font-mono">TLS_V1.3_ENCRYPTED</p>
+            <div class="text-right text-[9px] font-bold text-blue-600 uppercase tracking-widest bg-blue-600/5 px-3 py-1 rounded-full border border-blue-600/20">
+                Direct Stream Mode
             </div>
         </div>
 
-        <!-- Video Frame -->
-        <div class="glass-panel p-2 relative aspect-video">
-            <iframe id="main-video" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay"></iframe>
+        <!-- Player Area -->
+        <div class="player-wrap shadow-2xl">
+            <iframe id="main-frame" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay"></iframe>
             
-            <div id="boot-loader" class="absolute inset-0 bg-[#080a0c] flex flex-col items-center justify-center z-50 transition-opacity duration-700">
-                <div class="w-10 h-10 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <p class="mt-4 text-[9px] font-bold tracking-[0.4em] text-blue-600 animate-pulse uppercase">Syncing Shards</p>
+            <div id="loader" class="absolute inset-0 bg-[#000] flex flex-col items-center justify-center z-50">
+                <div class="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p class="mt-4 text-[9px] font-bold text-blue-900 tracking-widest uppercase">Executing Proxy Bypass</p>
             </div>
         </div>
 
-        <!-- Control Center -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div class="md:col-span-2 glass-panel p-6 space-y-4">
-                <p class="text-[10px] font-bold text-zinc-600 uppercase tracking-widest border-b border-zinc-800 pb-2 italic">System Output</p>
-                <div id="output" class="terminal space-y-1 h-24 overflow-y-auto">
-                    <p>> Waiting for init command...</p>
+        <!-- Info & Logs -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2 bg-[#050505] border border-zinc-900 p-6 rounded-2xl">
+                <p class="text-[9px] font-black text-zinc-800 uppercase mb-3 tracking-widest italic">Anicli Internal Logs</p>
+                <div id="logs" class="log-box space-y-1">
+                    <p class="text-zinc-700">> Core v7.0.1 ready.</p>
                 </div>
             </div>
+            
             <div class="flex flex-col gap-3">
-                <button onclick="switchMirror()" class="btn-action flex-1 bg-white/5 hover:bg-white/10 border border-zinc-800 text-zinc-300">
-                    Сменить зеркало
+                <button onclick="rotateShard()" class="btn-control py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest">
+                    Сменить зеркало (ОАЭ)
                 </button>
-                <button onclick="shareLink()" class="btn-action flex-1 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20">
+                <button onclick="copyRoom()" class="btn-control py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest">
                     Поделиться
                 </button>
             </div>
@@ -64,72 +62,66 @@
 
     <script>
         const API = "https://ivolga392-my-anime-api.hf.space";
-        const urlParams = new URLSearchParams(window.location.search);
-        const anime = urlParams.get('title') || urlParams.get('q') || "Dr. Stone";
+        const query = new URLSearchParams(window.location.search).get('q') || "Dr. Stone";
         
-        let activeMirrors = [];
-        let mirrorIndex = 0;
+        let mirrors = [];
+        let currentIdx = 0;
+        let playerPath = "";
 
-        function log(msg, color = "text-zinc-500") {
-            const out = document.getElementById('output');
-            out.innerHTML += `<p class="${color}">> ${msg}</p>`;
-            out.scrollTop = out.scrollHeight;
+        function addLog(msg, color = "#444") {
+            const l = document.getElementById('logs');
+            l.innerHTML += `<p style="color: ${color}">> ${msg}</p>`;
+            l.scrollTop = l.scrollHeight;
         }
 
         async function init() {
-            document.getElementById('header-title').innerText = anime.replace(".", " ");
-            log("Starting handshake with Master Server...");
+            document.getElementById('anime-title').innerText = query;
+            addLog(`Searching for manifest: ${query}`);
 
             try {
-                const res = await fetch(API + "/");
-                if (res.ok) {
-                    document.getElementById('conn-dot').classList.replace('bg-zinc-600', 'bg-green-500');
-                    document.getElementById('conn-text').innerText = "Cloud Online";
-                    document.getElementById('conn-text').className = "text-[10px] font-bold text-green-500 uppercase tracking-widest";
-                    log("Cloud Status: SECURE", "text-green-500");
-                }
-            } catch (e) { log("Connection unstable. Fallback active.", "text-yellow-600"); }
-
-            try {
-                log(`Searching for data: ${anime}`);
-                const search = await fetch(`${API}/search?q=${encodeURIComponent(anime)}`);
-                const data = await search.json();
+                const res = await fetch(`${API}/search?q=${encodeURIComponent(query)}`);
+                const data = await res.json();
 
                 if (data.found) {
-                    activeMirrors = data.alternatives;
-                    log(`Found ${activeMirrors.length} active mirrors.`, "text-blue-500");
-                    updatePlayer(0);
+                    mirrors = data.mirrors;
+                    playerPath = data.player_url.split('/').slice(3).join('/');
+                    
+                    document.getElementById('status-line').innerText = "Node: CONNECTED";
+                    document.getElementById('status-line').className = "text-[9px] font-bold text-blue-500 tracking-[0.3em] mt-1 uppercase";
+                    
+                    addLog(`Success! Found shards: ${mirrors.length}`, "#3b82f6");
+                    loadMirror(0);
                 } else {
-                    log("Direct ID not found. Brute-forcing search...", "text-red-500");
-                    document.getElementById('main-video').src = `https://kodik.info/search?title=${encodeURIComponent(anime)}`;
+                    addLog("Kodik API empty. Using brute fallback.", "#ef4444");
+                    document.getElementById('main-frame').src = `https://kodik.info/search?title=${encodeURIComponent(query)}`;
                 }
             } catch (e) {
-                log("Kernel error. Retrying...", "text-red-500");
+                addLog("Master node failure.", "#ef4444");
             }
 
             setTimeout(() => {
-                document.getElementById('boot-loader').style.opacity = '0';
-                setTimeout(() => document.getElementById('boot-loader').style.display = 'none', 700);
-            }, 3000);
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+            }, 2000);
         }
 
-        function updatePlayer(idx) {
-            if (!activeMirrors[idx]) return;
-            mirrorIndex = idx;
-            const url = activeMirrors[idx];
-            const domain = new URL(url).hostname;
-            document.getElementById('main-video').src = url;
-            log(`Redirected to shard: ${domain}`, "text-blue-400");
+        function loadMirror(idx) {
+            currentIdx = idx;
+            const host = mirrors[idx];
+            // Используем прямой путь к плееру, подставляя работающие домены
+            const finalUrl = `${host}/${playerPath}`;
+            document.getElementById('main-frame').src = finalUrl;
+            addLog(`Bypass applied: ${new URL(host).hostname}`, "#888");
         }
 
-        function switchMirror() {
-            mirrorIndex = (mirrorIndex + 1) % activeMirrors.length;
-            updatePlayer(mirrorIndex);
+        function rotateShard() {
+            currentIdx = (currentIdx + 1) % mirrors.length;
+            loadMirror(currentIdx);
         }
 
-        function shareLink() {
+        function copyRoom() {
             navigator.clipboard.writeText(window.location.href);
-            log("Room link copied to clipboard.", "text-white");
+            addLog("Link copied.");
         }
 
         window.onload = init;
