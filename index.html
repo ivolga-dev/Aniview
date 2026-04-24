@@ -1,9 +1,130 @@
-<div style="background:#000; padding:20px; color:#fff; text-align:center;">
-    <h3>Тест плеера (Без API)</h3>
-    <button onclick="document.getElementById('testFrame').src='https://kodik.info/serial/32014/9600a9477e770c3298c9f53e30f1c93f'">
-        Запустить тестовое видео (Наруто)
-    </button>
-    <div style="margin-top:20px; aspect-ratio:16/9; background:#111;">
-        <iframe id="testFrame" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnimeStream Ultra</title>
+    <style>
+        :root { --main: #ff3e3e; --bg: #0b0d12; --card: #161a23; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #fff; }
+        .header { background: var(--card); padding: 15px; border-bottom: 2px solid var(--main); text-align: center; position: sticky; top: 0; z-index: 100; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .search-box { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #333; background: var(--card); color: #fff; margin-bottom: 20px; font-size: 1rem; outline: none; transition: 0.3s; }
+        .search-box:focus { border-color: var(--main); }
+        .content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+        .anime-card { background: var(--card); border-radius: 12px; overflow: hidden; cursor: pointer; transition: 0.3s; border: 1px solid transparent; }
+        .anime-card:hover { transform: translateY(-5px); border-color: var(--main); }
+        .anime-poster { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
+        .anime-info { padding: 10px; font-size: 0.85rem; text-align: center; font-weight: 500; }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 1000; overflow-y: auto; }
+        .modal.active { display: block; }
+        .modal-content { max-width: 900px; margin: 10px auto; padding: 10px; }
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .player-wrap { background: #000; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; border: 1px solid #333; }
+        iframe { width: 100%; height: 100%; border: none; }
+        
+        .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; color: #fff; transition: 0.2s; }
+        .btn-main { background: var(--main); }
+        .btn-alt { background: #333; margin-top: 10px; width: 100%; }
+        .btn:hover { opacity: 0.8; }
+        .details { margin-top: 20px; line-height: 1.5; color: #aaa; }
+    </style>
+</head>
+<body>
+
+<div class="header"><h2>🎬 AnimeStream Premium</h2></div>
+
+<div class="container">
+    <input type="text" class="search-box" id="searchInput" placeholder="Поиск аниме (например: Наруто)..." onkeypress="if(event.key==='Enter') search()">
+    <div id="grid" class="content-grid"></div>
+</div>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <div class="controls">
+            <button class="btn btn-main" onclick="switchPlayer()">♻️ Сменить плеер</button>
+            <button class="btn" style="background:none; font-size:24px" onclick="closePlayer()">&times;</button>
+        </div>
+        <div id="playerWrap" class="player-wrap"></div>
+        <div id="details" class="details"></div>
     </div>
 </div>
+
+<script>
+    let currentId = null;
+    let currentTitle = "";
+    let playerIndex = 0;
+
+    async function start() {
+        const res = await fetch('https://api.jikan.moe/v4/top/anime?limit=20');
+        const data = await res.json();
+        render(data.data);
+    }
+
+    async function search() {
+        const q = document.getElementById('searchInput').value;
+        if(!q) return;
+        const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(q)}&limit=20`);
+        const data = await res.json();
+        render(data.data);
+    }
+
+    function render(list) {
+        document.getElementById('grid').innerHTML = list.map(a => `
+            <div class="anime-card" onclick="openAnime(${a.mal_id}, '${a.title.replace(/'/g,"")}')">
+                <img src="${a.images.jpg.large_image_url}" class="anime-poster">
+                <div class="anime-info">${a.title}</div>
+            </div>
+        `).join('');
+    }
+
+    function openAnime(id, title) {
+        currentId = id;
+        currentTitle = title;
+        playerIndex = 0;
+        document.getElementById('modal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        loadPlayer();
+        
+        fetch(`https://api.jikan.moe/v4/anime/${id}`).then(r => r.json()).then(d => {
+            document.getElementById('details').innerHTML = `<h3>${d.data.title}</h3><p style="margin-top:10px">${d.data.synopsis || ''}</p>`;
+        });
+    }
+
+    function loadPlayer() {
+        const wrap = document.getElementById('playerWrap');
+        // Список разных доменов-плееров
+        const sources = [
+            `https://api.collaps.org/embed/shikimori/${currentId}`,
+            `https://vidsrc.me/embed/anime?mal=${currentId}`,
+            `https://www.youtube.com/results?search_query=${encodeURIComponent(currentTitle)}+смотреть+аниме`
+        ];
+
+        if (playerIndex < sources.length) {
+            wrap.innerHTML = `<iframe src="${sources[playerIndex]}" allowfullscreen></iframe>`;
+        } else {
+            wrap.innerHTML = `
+                <div style="padding:40px; text-align:center">
+                    <p>Все плееры заблокированы вашим провайдером.</p>
+                    <a href="https://anilibria.top/search?q=${encodeURIComponent(currentTitle)}" target="_blank" class="btn btn-main" style="display:inline-block; margin-top:15px; text-decoration:none">Найти на Anilibria</a>
+                </div>`;
+        }
+    }
+
+    function switchPlayer() {
+        playerIndex++;
+        loadPlayer();
+    }
+
+    function closePlayer() {
+        document.getElementById('modal').classList.remove('active');
+        document.getElementById('playerWrap').innerHTML = '';
+        document.body.style.overflow = 'auto';
+    }
+
+    start();
+</script>
+</body>
+</html>
