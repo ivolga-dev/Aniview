@@ -5,723 +5,211 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AnimeStream - Смотри аниме бесплатно</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
             color: #fff;
             min-height: 100vh;
         }
-
         .header {
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(10px);
             padding: 1.5rem 2rem;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
             position: sticky;
             top: 0;
             z-index: 100;
         }
-
         .header h1 {
             font-size: 2rem;
             background: linear-gradient(45deg, #667eea, #764ba2, #f093fb);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .search-section {
-            margin-bottom: 2rem;
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .search-section { margin-bottom: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }
         .search-box {
-            flex: 1;
-            min-width: 300px;
-            padding: 1rem 1.5rem;
+            flex: 1; min-width: 300px; padding: 1rem 1.5rem;
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50px;
-            color: #fff;
-            font-size: 1rem;
-            outline: none;
-            transition: all 0.3s ease;
+            border-radius: 50px; color: #fff; font-size: 1rem; outline: none;
         }
-
-        .search-box:focus {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: #667eea;
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .search-box::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
         .search-btn {
-            padding: 1rem 2rem;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            border: none;
-            border-radius: 50px;
-            color: #fff;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            padding: 1rem 2rem; background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none; border-radius: 50px; color: #fff; cursor: pointer; transition: 0.3s;
         }
-
-        .search-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .filter-section {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
+        .search-btn:hover { transform: scale(1.05); }
+        .filter-section { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
         .filter-btn {
-            padding: 0.7rem 1.5rem;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 25px;
-            color: #fff;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            padding: 0.7rem 1.5rem; background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 25px;
+            color: #fff; cursor: pointer;
         }
-
-        .filter-btn:hover,
-        .filter-btn.active {
-            background: #667eea;
-            border-color: #667eea;
-        }
-
+        .filter-btn.active { background: #667eea; border-color: #667eea; }
         .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem; margin-bottom: 2rem;
         }
-
         .anime-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
+            background: rgba(255, 255, 255, 0.05); border-radius: 15px;
+            overflow: hidden; cursor: pointer; transition: 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1); position: relative;
         }
-
-        .anime-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-            border-color: #667eea;
-        }
-
-        .anime-poster {
-            width: 100%;
-            height: 280px;
-            object-fit: cover;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-        }
-
-        .anime-info {
-            padding: 1rem;
-        }
-
-        .anime-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            min-height: 2.8rem;
-        }
-
-        .anime-meta {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .status-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 0.3rem 0.8rem;
-            background: rgba(102, 126, 234, 0.9);
-            border-radius: 15px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
+        .anime-card:hover { transform: translateY(-5px); border-color: #667eea; }
+        .anime-poster { width: 100%; height: 280px; object-fit: cover; }
+        .anime-info { padding: 1rem; }
+        .anime-title { font-size: 0.95rem; font-weight: 600; min-height: 2.8rem; }
         .player-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 1000;
-            overflow-y: auto;
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.95); z-index: 1000; overflow-y: auto;
         }
-
-        .player-modal.active {
-            display: block;
-        }
-
-        .modal-content {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 2rem;
-        }
-
+        .player-modal.active { display: block; }
+        .modal-content { max-width: 1100px; margin: 2rem auto; padding: 2rem; position: relative; }
         .close-btn {
-            position: absolute;
-            top: 1rem;
-            right: 2rem;
-            font-size: 2.5rem;
-            cursor: pointer;
-            color: #fff;
-            background: none;
-            border: none;
-            z-index: 1001;
-            transition: color 0.3s ease;
+            position: absolute; top: -1rem; right: 1rem; font-size: 3rem;
+            color: #fff; background: none; border: none; cursor: pointer;
         }
-
-        .close-btn:hover {
-            color: #667eea;
-        }
-
         .player-container {
-            background: #000;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 2rem;
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            background: #000; border-radius: 15px; overflow: hidden;
+            margin-bottom: 2rem; aspect-ratio: 16/9; width: 100%;
         }
-
-        .video-player {
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #000;
-        }
-
-        .episode-section {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 1.5rem;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 2rem;
-        }
-
-        .episode-section h3 {
-            margin-bottom: 1rem;
-            color: #667eea;
-            font-size: 1.2rem;
-        }
-
-        .episode-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 0.7rem;
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
-
-        .episode-grid::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .episode-grid::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-        }
-
-        .episode-grid::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 10px;
-        }
-
-        .episode-btn {
-            padding: 0.8rem;
-            background: rgba(102, 126, 234, 0.2);
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            border-radius: 8px;
-            color: #fff;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .episode-btn:hover {
-            background: rgba(102, 126, 234, 0.4);
-            transform: scale(1.05);
-        }
-
-        .episode-btn.active {
-            background: #667eea;
-            border-color: #667eea;
-            box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
-        }
-
-        .quality-selector {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .quality-btn {
-            padding: 0.5rem 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: #fff;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-
-        .quality-btn.active {
-            background: #667eea;
-            border-color: #667eea;
-        }
-
-        .anime-details {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 1.5rem;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .anime-details h2 {
-            margin-bottom: 1rem;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .detail-row {
-            margin-bottom: 0.8rem;
-            padding-bottom: 0.8rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .detail-label {
-            color: #667eea;
-            font-weight: 600;
-            margin-right: 0.5rem;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 3rem;
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .loading::after {
-            content: '...';
-            animation: dots 1.5s infinite;
-        }
-
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
-        }
-
-        .error {
-            text-align: center;
-            padding: 2rem;
-            color: #ff6b6b;
-            background: rgba(255, 107, 107, 0.1);
-            border-radius: 10px;
-            margin: 1rem 0;
-        }
-
-        @media (max-width: 768px) {
-            .content-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            }
-
-            .modal-content {
-                padding: 1rem;
-                margin: 1rem;
-            }
-
-            .close-btn {
-                top: 0.5rem;
-                right: 1rem;
-            }
-
-            .episode-grid {
-                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-            }
-        }
+        iframe { width: 100%; height: 100%; border: none; }
+        .anime-details { background: rgba(255, 255, 255, 0.05); padding: 1.5rem; border-radius: 10px; }
+        .loading { text-align: center; padding: 3rem; font-size: 1.2rem; }
+        .error { color: #ff6b6b; text-align: center; padding: 2rem; }
     </style>
 </head>
 <body>
+
     <div class="header">
         <h1>🎬 AnimeStream</h1>
     </div>
 
     <div class="container">
         <div class="search-section">
-            <input type="text" class="search-box" id="searchInput" placeholder="🔍 Поиск аниме...">
+            <input type="text" class="search-box" id="searchInput" placeholder="Поиск аниме...">
             <button class="search-btn" onclick="searchAnime()">Искать</button>
         </div>
 
         <div class="filter-section">
             <button class="filter-btn active" onclick="loadCategory('airing')">Выходит сейчас</button>
-            <button class="filter-btn" onclick="loadCategory('upcoming')">Скоро выйдет</button>
             <button class="filter-btn" onclick="loadCategory('bypopularity')">Популярные</button>
             <button class="filter-btn" onclick="loadCategory('favorite')">Топ рейтинг</button>
         </div>
 
-        <div id="animeGrid" class="content-grid">
-            <div class="loading">Загрузка аниме</div>
-        </div>
+        <div id="animeGrid" class="content-grid"></div>
     </div>
 
     <div id="playerModal" class="player-modal">
-        <button class="close-btn" onclick="closePlayer()">&times;</button>
         <div class="modal-content">
-            <div class="player-container">
-                <video id="videoPlayer" class="video-player" controls autoplay></video>
-            </div>
-
-            <div class="quality-selector" id="qualitySelector"></div>
-
-            <div class="episode-section">
-                <h3>Эпизоды</h3>
-                <div id="episodeGrid" class="episode-grid"></div>
-            </div>
-
+            <button class="close-btn" onclick="closePlayer()">&times;</button>
+            <div class="player-container" id="videoContainer"></div>
             <div id="animeDetails" class="anime-details"></div>
         </div>
     </div>
 
     <script>
-        // API endpoints
         const JIKAN_API = 'https://api.jikan.moe/v4';
-        const CONSUMET_API = 'https://api-consumet-org-kappa-sage.vercel.app';
-        const CORS_PROXY = 'https://corsproxy.io/?';
+        // Публичный токен для поиска по базе Kodik
+        const KODIK_TOKEN = '77a064344baaef3988583486337581ff';
 
-        let currentAnime = null;
-        let currentEpisodeList = [];
-        let currentVideoSources = [];
-        let currentCategory = 'airing';
-
-        // Загрузка категории аниме
+        // 1. Загрузка списка аниме
         async function loadCategory(category) {
-            currentCategory = category;
-            
-            // Обновление активной кнопки
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            if(event) event.target.classList.add('active');
 
             const grid = document.getElementById('animeGrid');
-            grid.innerHTML = '<div class="loading">Загрузка аниме</div>';
+            grid.innerHTML = '<div class="loading">Загрузка контента...</div>';
 
             try {
-                let url = `${JIKAN_API}/top/anime?filter=${category}`;
-                const response = await fetch(url);
+                const response = await fetch(`${JIKAN_API}/top/anime?filter=${category}&limit=20`);
                 const data = await response.json();
-                
-                displayAnimeGrid(data.data);
-            } catch (error) {
-                console.error('Ошибка загрузки:', error);
-                grid.innerHTML = '<div class="error">Ошибка загрузки. Попробуйте позже.</div>';
+                renderGrid(data.data);
+            } catch (e) {
+                grid.innerHTML = '<div class="error">Не удалось загрузить данные.</div>';
             }
         }
 
-        // Поиск аниме
+        // 2. Поиск
         async function searchAnime() {
-            const query = document.getElementById('searchInput').value.trim();
-            if (!query) return;
-
+            const query = document.getElementById('searchInput').value;
+            if(!query) return;
             const grid = document.getElementById('animeGrid');
-            grid.innerHTML = '<div class="loading">Поиск аниме</div>';
-
+            grid.innerHTML = '<div class="loading">Ищем...</div>';
             try {
                 const response = await fetch(`${JIKAN_API}/anime?q=${encodeURIComponent(query)}&limit=20`);
                 const data = await response.json();
-                
-                if (data.data.length === 0) {
-                    grid.innerHTML = '<div class="error">Ничего не найдено</div>';
-                    return;
-                }
-                
-                displayAnimeGrid(data.data);
-            } catch (error) {
-                console.error('Ошибка поиска:', error);
-                grid.innerHTML = '<div class="error">Ошибка поиска. Попробуйте позже.</div>';
+                renderGrid(data.data);
+            } catch (e) {
+                grid.innerHTML = '<div class="error">Ошибка поиска.</div>';
             }
         }
 
-        // Поиск по Enter
+        // 3. Отрисовка карточек
+        function renderGrid(list) {
+            const grid = document.getElementById('animeGrid');
+            grid.innerHTML = list.map(anime => `
+                <div class="anime-card" onclick="openAnime(${anime.mal_id})">
+                    <img src="${anime.images.jpg.large_image_url}" class="anime-poster">
+                    <div class="anime-info">
+                        <div class="anime-title">${anime.title}</div>
+                        <div style="font-size:0.8rem; color: #aaa;">⭐ ${anime.score || 'N/A'}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 4. Открытие плеера
+        async function openAnime(id) {
+            const modal = document.getElementById('playerModal');
+            const container = document.getElementById('videoContainer');
+            const details = document.getElementById('animeDetails');
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            container.innerHTML = '<div class="loading">Поиск видео-потока...</div>';
+            details.innerHTML = '';
+
+            try {
+                // Получаем инфо
+                const infoRes = await fetch(`${JIKAN_API}/anime/${id}`);
+                const infoData = await infoRes.json();
+                const anime = infoData.data;
+
+                details.innerHTML = `
+                    <h2 style="margin-bottom:10px">${anime.title}</h2>
+                    <p style="color:#ccc; font-size:0.9rem">${anime.synopsis || 'Нет описания'}</p>
+                `;
+
+                // Ищем плеер в Kodik по Shikimori ID (он совпадает с MyAnimeList ID)
+                const kodikRes = await fetch(`https://kodikapi.com/search?token=${KODIK_TOKEN}&shikimori_id=${id}`);
+                const kodikData = await kodikRes.json();
+
+                if (kodikData.results && kodikData.results.length > 0) {
+                    // Используем протокол https и добавляем автоматический выбор первой серии
+                    let videoUrl = kodikData.results[0].link;
+                    if(!videoUrl.startsWith('http')) videoUrl = 'https:' + videoUrl;
+                    
+                    container.innerHTML = `<iframe src="${videoUrl}" allowfullscreen></iframe>`;
+                } else {
+                    container.innerHTML = '<div class="error">К сожалению, видео для этого аниме не найдено в базе.</div>';
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="error">Ошибка загрузки плеера.</div>';
+            }
+        }
+
+        function closePlayer() {
+            document.getElementById('playerModal').classList.remove('active');
+            document.getElementById('videoContainer').innerHTML = '';
+            document.body.style.overflow = 'auto';
+        }
+
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') searchAnime();
         });
 
-        // Отображение сетки аниме
-        function displayAnimeGrid(animeList) {
-            const grid = document.getElementById('animeGrid');
-            
-            grid.innerHTML = animeList.map(anime => {
-                const status = anime.status || 'Unknown';
-                const score = anime.score || 'N/A';
-                
-                return `
-                    <div class="anime-card" onclick="openAnime(${anime.mal_id}, '${anime.title.replace(/'/g, "\\'")}')">
-                        <img src="${anime.images.jpg.large_image_url}" alt="${anime.title}" class="anime-poster">
-                        <div class="status-badge">${status}</div>
-                        <div class="anime-info">
-                            <div class="anime-title">${anime.title}</div>
-                            <div class="anime-meta">⭐ ${score} • ${anime.year || 'TBA'}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Открытие аниме
-        async function openAnime(malId, title) {
-            document.getElementById('playerModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-            
-            const detailsDiv = document.getElementById('animeDetails');
-            detailsDiv.innerHTML = '<div class="loading">Загрузка информации</div>';
-            
-            const episodeDiv = document.getElementById('episodeGrid');
-            episodeDiv.innerHTML = '<div class="loading">Загрузка эпизодов</div>';
-
-            try {
-                // Загрузка деталей из Jikan
-                const detailsResponse = await fetch(`${JIKAN_API}/anime/${malId}/full`);
-                const detailsData = await detailsResponse.json();
-                currentAnime = detailsData.data;
-                
-                displayAnimeDetails(currentAnime);
-                
-                // Поиск аниме в GogoAnime через Consumet
-                await loadEpisodes(title);
-                
-            } catch (error) {
-                console.error('Ошибка:', error);
-                detailsDiv.innerHTML = '<div class="error">Ошибка загрузки данных</div>';
-                episodeDiv.innerHTML = '<div class="error">Не удалось загрузить эпизоды</div>';
-            }
-        }
-
-        // Загрузка эпизодов
-        async function loadEpisodes(title) {
-            const episodeDiv = document.getElementById('episodeGrid');
-            
-            try {
-                // Поиск в GogoAnime
-                const searchUrl = `${CONSUMET_API}/anime/gogoanime/${encodeURIComponent(title)}`;
-                const searchResponse = await fetch(searchUrl);
-                const searchData = await searchResponse.json();
-                
-                if (!searchData.results || searchData.results.length === 0) {
-                    episodeDiv.innerHTML = '<div class="error">Эпизоды не найдены</div>';
-                    return;
-                }
-                
-                // Берем первый результат
-                const animeId = searchData.results[0].id;
-                
-                // Получаем список эпизодов
-                const episodesUrl = `${CONSUMET_API}/anime/gogoanime/info/${animeId}`;
-                const episodesResponse = await fetch(episodesUrl);
-                const episodesData = await episodesResponse.json();
-                
-                currentEpisodeList = episodesData.episodes || [];
-                
-                if (currentEpisodeList.length === 0) {
-                    episodeDiv.innerHTML = '<div class="error">Нет доступных эпизодов</div>';
-                    return;
-                }
-                
-                displayEpisodes();
-                
-            } catch (error) {
-                console.error('Ошибка загрузки эпизодов:', error);
-                episodeDiv.innerHTML = '<div class="error">Не удалось загрузить эпизоды. Попробуйте другое аниме.</div>';
-            }
-        }
-
-        // Отображение эпизодов
-        function displayEpisodes() {
-            const episodeDiv = document.getElementById('episodeGrid');
-            
-            episodeDiv.innerHTML = currentEpisodeList.map((episode, index) => `
-                <button class="episode-btn ${index === 0 ? 'active' : ''}" 
-                        onclick="loadVideo('${episode.id}', ${index})">
-                    ${episode.number}
-                </button>
-            `).join('');
-        }
-
-        // Загрузка видео
-        async function loadVideo(episodeId, index) {
-            const player = document.getElementById('videoPlayer');
-            const qualityDiv = document.getElementById('qualitySelector');
-            
-            player.src = '';
-            qualityDiv.innerHTML = '<div class="loading">Загрузка видео</div>';
-            
-            // Обновление активной кнопки
-            document.querySelectorAll('.episode-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            try {
-                const streamUrl = `${CONSUMET_API}/anime/gogoanime/watch/${episodeId}`;
-                const streamResponse = await fetch(streamUrl);
-                const streamData = await streamResponse.json();
-                
-                currentVideoSources = streamData.sources || [];
-                
-                if (currentVideoSources.length === 0) {
-                    qualityDiv.innerHTML = '<div class="error">Нет доступных источников</div>';
-                    return;
-                }
-                
-                // Отображение кнопок качества
-                displayQualityButtons();
-                
-                // Автовыбор наилучшего качества
-                const defaultSource = currentVideoSources.find(s => s.quality === '1080p') || 
-                                     currentVideoSources.find(s => s.quality === '720p') || 
-                                     currentVideoSources[0];
-                
-                player.src = defaultSource.url;
-                player.play();
-                
-            } catch (error) {
-                console.error('Ошибка загрузки видео:', error);
-                qualityDiv.innerHTML = '<div class="error">Не удалось загрузить видео</div>';
-            }
-        }
-
-        // Отображение кнопок качества
-        function displayQualityButtons() {
-            const qualityDiv = document.getElementById('qualitySelector');
-            
-            const uniqueQualities = [...new Set(currentVideoSources.map(s => s.quality))];
-            
-            qualityDiv.innerHTML = '<span style="margin-right: 1rem;">Качество:</span>' + 
-                uniqueQualities.map((quality, index) => {
-                    const source = currentVideoSources.find(s => s.quality === quality);
-                    return `
-                        <button class="quality-btn ${index === 0 ? 'active' : ''}" 
-                                onclick="changeQuality('${quality}')">
-                            ${quality}
-                        </button>
-                    `;
-                }).join('');
-        }
-
-        // Смена качества
-        function changeQuality(quality) {
-            const player = document.getElementById('videoPlayer');
-            const currentTime = player.currentTime;
-            const wasPlaying = !player.paused;
-            
-            const source = currentVideoSources.find(s => s.quality === quality);
-            if (source) {
-                player.src = source.url;
-                player.currentTime = currentTime;
-                if (wasPlaying) player.play();
-            }
-            
-            // Обновление активной кнопки
-            document.querySelectorAll('.quality-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-        }
-
-        // Отображение деталей аниме
-        function displayAnimeDetails(anime) {
-            const detailsDiv = document.getElementById('animeDetails');
-            
-            const synopsis = anime.synopsis || 'Описание отсутствует';
-            const genres = anime.genres?.map(g => g.name).join(', ') || 'N/A';
-            const studios = anime.studios?.map(s => s.name).join(', ') || 'N/A';
-            
-            detailsDiv.innerHTML = `
-                <h2>${anime.title}</h2>
-                <div class="detail-row">
-                    <span class="detail-label">Оригинальное название:</span>${anime.title_english || anime.title_japanese || 'N/A'}
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Тип:</span>${anime.type || 'N/A'}
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Эпизоды:</span>${anime.episodes || 'N/A'}
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Статус:</span>${anime.status || 'N/A'}
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Вышло:</span>${anime.aired?.string || 'N/A'}
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Рейтинг:</span>⭐ ${anime.score || 'N/A'}/10
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Жанры:</span>${genres}
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Студия:</span>${studios}
-                </div>
-                <div class="detail-row" style="border-bottom: none;">
-                    <span class="detail-label">Описание:</span><br><br>${synopsis}
-                </div>
-            `;
-        }
-
-        // Закрытие плеера
-        function closePlayer() {
-            document.getElementById('playerModal').classList.remove('active');
-            document.getElementById('videoPlayer').pause();
-            document.getElementById('videoPlayer').src = '';
-            document.body.style.overflow = 'auto';
-        }
-
-        // Закрытие по Escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closePlayer();
-        });
-
-        // Инициализация при загрузке
+        // Старт
         loadCategory('airing');
     </script>
 </body>
