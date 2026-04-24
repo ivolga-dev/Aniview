@@ -4,248 +4,69 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>AniFree — аниме без рекламы</title>
-  <!-- Video.js + HLS -->
   <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #0e0e0e;
-      color: #e0e0e0;
-      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      background: #0e0e0e; color: #e0e0e0; font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      min-height: 100vh; display: flex; flex-direction: column;
     }
     header {
-      background: #1a1a1a;
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      flex-wrap: wrap;
-      box-shadow: 0 2px 8px rgba(255,140,0,0.15);
+      background: #1a1a1a; padding: 12px 20px; display: flex; align-items: center;
+      gap: 20px; flex-wrap: wrap; box-shadow: 0 2px 8px rgba(255,140,0,0.15);
     }
-    .logo {
-      font-size: 1.8rem;
-      font-weight: bold;
-      color: #ff8c00;
-      letter-spacing: 1px;
-      text-shadow: 0 0 6px #ff8c00aa;
-      cursor: pointer;
-    }
-    .search-box {
-      flex: 1;
-      max-width: 400px;
-      position: relative;
-    }
+    .logo { font-size: 1.8rem; font-weight: bold; color: #ff8c00; letter-spacing: 1px; text-shadow: 0 0 6px #ff8c00aa; cursor: pointer; }
+    .search-box { flex: 1; max-width: 400px; position: relative; }
     .search-box input {
-      width: 100%;
-      padding: 10px 15px;
-      border-radius: 25px;
-      border: 1px solid #333;
-      background: #2a2a2a;
-      color: #fff;
-      font-size: 1rem;
-      outline: none;
-      transition: border 0.2s;
+      width: 100%; padding: 10px 15px; border-radius: 25px; border: 1px solid #333;
+      background: #2a2a2a; color: #fff; font-size: 1rem; outline: none; transition: border 0.2s;
     }
-    .search-box input:focus {
-      border-color: #ff8c00;
-    }
+    .search-box input:focus { border-color: #ff8c00; }
     .search-results {
-      position: absolute;
-      top: 110%;
-      left: 0;
-      width: 100%;
-      background: #1e1e1e;
-      border: 1px solid #333;
-      border-radius: 12px;
-      max-height: 320px;
-      overflow-y: auto;
-      z-index: 100;
-      display: none;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.8);
+      position: absolute; top: 110%; left: 0; width: 100%; background: #1e1e1e;
+      border: 1px solid #333; border-radius: 12px; max-height: 320px; overflow-y: auto;
+      z-index: 100; display: none; box-shadow: 0 8px 20px rgba(0,0,0,0.8);
     }
-    .search-results.active {
-      display: block;
-    }
+    .search-results.active { display: block; }
     .search-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px;
-      cursor: pointer;
-      border-bottom: 1px solid #2a2a2a;
-      transition: background 0.2s;
+      display: flex; align-items: center; gap: 12px; padding: 10px; cursor: pointer;
+      border-bottom: 1px solid #2a2a2a; transition: background 0.2s;
     }
-    .search-item:hover {
-      background: #2a2a2a;
-    }
-    .search-item img {
-      width: 40px;
-      height: 56px;
-      object-fit: cover;
-      border-radius: 6px;
-      background: #333;
-    }
-    .search-item .title {
-      font-size: 0.95rem;
-      font-weight: 500;
-    }
-    .container {
-      flex: 1;
-      padding: 20px;
-      max-width: 1400px;
-      margin: 0 auto;
-      width: 100%;
-    }
-    .section-title {
-      font-size: 1.5rem;
-      margin: 20px 0 15px;
-      padding-left: 8px;
-      border-left: 4px solid #ff8c00;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 18px;
-    }
+    .search-item:hover { background: #2a2a2a; }
+    .search-item img { width: 40px; height: 56px; object-fit: cover; border-radius: 6px; background: #333; }
+    .search-item .title { font-size: 0.95rem; font-weight: 500; }
+    .container { flex: 1; padding: 20px; max-width: 1400px; margin: 0 auto; width: 100%; }
+    .section-title { font-size: 1.5rem; margin: 20px 0 15px; padding-left: 8px; border-left: 4px solid #ff8c00; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px; }
     .card {
-      background: #1a1a1a;
-      border-radius: 12px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      border: 1px solid #2a2a2a;
+      background: #1a1a1a; border-radius: 12px; overflow: hidden; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s; border: 1px solid #2a2a2a;
     }
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(255,140,0,0.25);
-      border-color: #ff8c00;
-    }
-    .card img {
-      width: 100%;
-      aspect-ratio: 2/3;
-      object-fit: cover;
-      background: #222;
-    }
-    .card .info {
-      padding: 10px;
-    }
-    .card .name {
-      font-weight: 600;
-      font-size: 0.9rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .card .details {
-      font-size: 0.8rem;
-      color: #aaa;
-      margin-top: 4px;
-    }
-    /* Страница тайтла */
-    .title-view {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 25px;
-      margin-top: 10px;
-    }
-    .poster {
-      width: 220px;
-      border-radius: 14px;
-      box-shadow: 0 0 20px rgba(255,140,0,0.3);
-      flex-shrink: 0;
-    }
-    .meta {
-      flex: 1;
-      min-width: 280px;
-    }
-    .meta h1 {
-      font-size: 2rem;
-      margin-bottom: 10px;
-      color: #ff8c00;
-    }
-    .episodes {
-      margin-top: 20px;
-    }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(255,140,0,0.25); border-color: #ff8c00; }
+    .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: #222; }
+    .card .info { padding: 10px; }
+    .card .name { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card .details { font-size: 0.8rem; color: #aaa; margin-top: 4px; }
+    .title-view { display: flex; flex-wrap: wrap; gap: 25px; margin-top: 10px; }
+    .poster { width: 220px; border-radius: 14px; box-shadow: 0 0 20px rgba(255,140,0,0.3); flex-shrink: 0; }
+    .meta { flex: 1; min-width: 280px; }
+    .meta h1 { font-size: 2rem; margin-bottom: 10px; color: #ff8c00; }
+    .episodes { margin-top: 20px; }
     .episode-btn {
-      display: inline-block;
-      margin: 6px;
-      padding: 10px 18px;
-      background: #2a2a2a;
-      border: 1px solid #444;
-      border-radius: 25px;
-      cursor: pointer;
-      transition: 0.2s;
-      font-weight: 500;
+      display: inline-block; margin: 6px; padding: 10px 18px; background: #2a2a2a;
+      border: 1px solid #444; border-radius: 25px; cursor: pointer; transition: 0.2s; font-weight: 500;
     }
-    .episode-btn:hover {
-      background: #ff8c00;
-      color: #000;
-      border-color: #ff8c00;
-    }
-    .quality-selector {
-      margin: 15px 0;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    .quality-selector select {
-      padding: 8px 15px;
-      background: #2a2a2a;
-      border: 1px solid #444;
-      color: #fff;
-      border-radius: 8px;
-      font-size: 0.95rem;
-    }
-    /* Видеоплеер */
-    .player-wrapper {
-      margin-top: 25px;
-      background: #000;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 0 30px rgba(0,0,0,0.7);
-      max-width: 1000px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .video-js {
-      width: 100%;
-      height: auto;
-      aspect-ratio: 16/9;
-    }
-    .back-btn {
-      display: inline-block;
-      margin-bottom: 15px;
-      color: #ff8c00;
-      cursor: pointer;
-      font-size: 1rem;
-      text-decoration: underline;
-    }
-    footer {
-      text-align: center;
-      padding: 15px;
-      color: #666;
-      font-size: 0.8rem;
-      border-top: 1px solid #222;
-    }
-    /* Скрытые элементы */
-    .hidden {
-      display: none !important;
-    }
-    @media (max-width: 600px) {
-      .poster {
-        width: 160px;
-      }
-      header {
-        justify-content: center;
-      }
-    }
+    .episode-btn:hover { background: #ff8c00; color: #000; border-color: #ff8c00; }
+    .quality-selector { margin: 15px 0; display: flex; gap: 10px; align-items: center; }
+    .quality-selector select { padding: 8px 15px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 8px; font-size: 0.95rem; }
+    .player-wrapper { margin-top: 25px; background: #000; border-radius: 16px; overflow: hidden; box-shadow: 0 0 30px rgba(0,0,0,0.7); max-width: 1000px; margin-left: auto; margin-right: auto; }
+    .video-js { width: 100%; height: auto; aspect-ratio: 16/9; }
+    .back-btn { display: inline-block; margin-bottom: 15px; color: #ff8c00; cursor: pointer; font-size: 1rem; text-decoration: underline; }
+    footer { text-align: center; padding: 15px; color: #666; font-size: 0.8rem; border-top: 1px solid #222; }
+    .hidden { display: none !important; }
+    .loading { text-align: center; padding: 30px; color: #ff8c00; }
+    .error-msg { color: #ff5555; text-align: center; padding: 20px; }
+    @media (max-width: 600px) { .poster { width: 160px; } header { justify-content: center; } }
   </style>
 </head>
 <body>
@@ -261,7 +82,9 @@
     <!-- Главная страница -->
     <div id="homeView">
       <div class="section-title">🔥 Последние обновления</div>
-      <div class="grid" id="updatesGrid"></div>
+      <div class="grid" id="updatesGrid">
+        <div class="loading">Загрузка...</div>
+      </div>
     </div>
 
     <!-- Страница тайтла -->
@@ -287,16 +110,22 @@
 
   <footer>Данные предоставлены AniLibria API. Для личного использования.</footer>
 
-  <!-- Скрипты -->
   <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-  <!-- videojs-http-streaming для HLS -->
   <script src="https://cdn.jsdelivr.net/npm/@videojs/http-streaming@3.10.0/dist/videojs-http-streaming.min.js"></script>
 
   <script>
     (function() {
-      const API = 'https://api.anilibria.tv/v2';
-      
-      // Текущий тайтл и плеер
+      const API_BASE = 'https://api.anilibria.tv/v2';
+      const CORS_PROXY = 'https://corsproxy.io/?';  // Публичный CORS-прокси
+
+      // Вспомогательная функция запросов через прокси
+      async function fetchAPI(endpoint) {
+        const url = API_BASE + endpoint;
+        const response = await fetch(CORS_PROXY + encodeURIComponent(url));
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      }
+
       let currentTitle = null;
       let player = null;
 
@@ -314,28 +143,26 @@
       const playerContainer = document.getElementById('playerContainer');
       const videoElement = document.getElementById('videoPlayer');
 
-      // Инициализация
       async function init() {
-        await loadUpdates();
         setupSearch();
         setupNavigation();
+        await loadUpdates();
       }
 
-      // Загрузка последних обновлений
       async function loadUpdates() {
         try {
-          const resp = await fetch(`${API}/getUpdates?limit=24`);
-          const data = await resp.json();
+          const data = await fetchAPI('/getUpdates?limit=24');
           if (data && data.items) {
             renderCards(data.items, updatesGrid);
+          } else {
+            updatesGrid.innerHTML = '<div class="error-msg">Нет данных</div>';
           }
         } catch (err) {
           console.error('Ошибка загрузки обновлений:', err);
-          updatesGrid.innerHTML = '<p style="color:#ff5555;">Не удалось загрузить список</p>';
+          updatesGrid.innerHTML = `<div class="error-msg">Не удалось загрузить список. Проверьте консоль (F12).</div>`;
         }
       }
 
-      // Рендер сетки карточек
       function renderCards(items, container) {
         container.innerHTML = '';
         items.forEach(item => {
@@ -353,15 +180,13 @@
         });
       }
 
-      // Поиск
       async function performSearch(query) {
         if (!query.trim()) {
           searchResults.classList.remove('active');
           return;
         }
         try {
-          const resp = await fetch(`${API}/search?search=${encodeURIComponent(query)}`);
-          const data = await resp.json();
+          const data = await fetchAPI(`/search?search=${encodeURIComponent(query)}`);
           if (data && data.items && data.items.length) {
             renderSearchResults(data.items);
           } else {
@@ -370,6 +195,8 @@
           }
         } catch (err) {
           console.error('Ошибка поиска:', err);
+          searchResults.innerHTML = '<div style="padding:15px;color:#f55;">Ошибка поиска</div>';
+          searchResults.classList.add('active');
         }
       }
 
@@ -408,7 +235,6 @@
         });
       }
 
-      // Навигация
       function setupNavigation() {
         document.getElementById('homeBtn').addEventListener('click', showHome);
         document.getElementById('backBtn').addEventListener('click', showHome);
@@ -426,10 +252,8 @@
       }
 
       async function openTitle(item) {
-        // item может быть кратким от поиска/апдейтов, нужен полный запрос
         try {
-          const resp = await fetch(`${API}/getTitle?code=${item.code}`);
-          const data = await resp.json();
+          const data = await fetchAPI(`/getTitle?code=${item.code}`);
           if (!data || !data.names) throw new Error('Нет данных');
           currentTitle = data;
           renderTitleView(currentTitle);
@@ -448,7 +272,6 @@
         titleName.textContent = title.names?.ru || title.names?.en || title.code;
         titleDesc.textContent = title.description || 'Описание отсутствует';
 
-        // Качества
         const qualities = title.player?.series || {};
         qualitySelect.innerHTML = '';
         Object.keys(qualities).sort((a,b) => parseInt(b)-parseInt(a)).forEach(q => {
@@ -458,19 +281,16 @@
           qualitySelect.appendChild(opt);
         });
 
-        // Эпизоды
         const totalEpisodes = title.episodes?.total || Object.keys(title.player?.series || {}).length || 0;
-        const selectedEpisodes = Array.from({length: totalEpisodes}, (_, i) => i+1);
         episodesList.innerHTML = '';
-        selectedEpisodes.forEach(ep => {
+        for (let ep = 1; ep <= totalEpisodes; ep++) {
           const btn = document.createElement('button');
           btn.className = 'episode-btn';
           btn.textContent = ep;
           btn.addEventListener('click', () => playEpisode(ep));
           episodesList.appendChild(btn);
-        });
+        }
 
-        // Сброс плеера
         if (player) {
           player.dispose();
           player = null;
@@ -489,10 +309,8 @@
         }
         const m3u8 = `https://${host}/videos/media/ts/${currentTitle.id}/1/${episode}/${quality}/${hash}.m3u8?countryIso=A&isAuthorized=0&isWithVideoAds=0&isWithVideoAdsAlways=0`;
 
-        // Показываем плеер
         playerContainer.classList.remove('hidden');
 
-        // Если плеера нет — инициализируем
         if (!player) {
           player = videojs(videoElement, {
             controls: true,
@@ -505,7 +323,6 @@
           });
         }
 
-        // Меняем источник
         player.src({
           src: m3u8,
           type: 'application/x-mpegURL'
@@ -513,7 +330,6 @@
         player.play().catch(e => console.log('Автовоспроизведение заблокировано браузером'));
       }
 
-      // Запуск
       init();
     })();
   </script>
