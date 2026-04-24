@@ -1,1 +1,521 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>AniFree — аниме без рекламы</title>
+  <!-- Video.js + HLS -->
+  <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #0e0e0e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: #1a1a1a;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 8px rgba(255,140,0,0.15);
+    }
+    .logo {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #ff8c00;
+      letter-spacing: 1px;
+      text-shadow: 0 0 6px #ff8c00aa;
+      cursor: pointer;
+    }
+    .search-box {
+      flex: 1;
+      max-width: 400px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 10px 15px;
+      border-radius: 25px;
+      border: 1px solid #333;
+      background: #2a2a2a;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .search-box input:focus {
+      border-color: #ff8c00;
+    }
+    .search-results {
+      position: absolute;
+      top: 110%;
+      left: 0;
+      width: 100%;
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 12px;
+      max-height: 320px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.8);
+    }
+    .search-results.active {
+      display: block;
+    }
+    .search-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #2a2a2a;
+      transition: background 0.2s;
+    }
+    .search-item:hover {
+      background: #2a2a2a;
+    }
+    .search-item img {
+      width: 40px;
+      height: 56px;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #333;
+    }
+    .search-item .title {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+    .container {
+      flex: 1;
+      padding: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .section-title {
+      font-size: 1.5rem;
+      margin: 20px 0 15px;
+      padding-left: 8px;
+      border-left: 4px solid #ff8c00;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 18px;
+    }
+    .card {
+      background: #1a1a1a;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid #2a2a2a;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(255,140,0,0.25);
+      border-color: #ff8c00;
+    }
+    .card img {
+      width: 100%;
+      aspect-ratio: 2/3;
+      object-fit: cover;
+      background: #222;
+    }
+    .card .info {
+      padding: 10px;
+    }
+    .card .name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card .details {
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-top: 4px;
+    }
+    /* Страница тайтла */
+    .title-view {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 25px;
+      margin-top: 10px;
+    }
+    .poster {
+      width: 220px;
+      border-radius: 14px;
+      box-shadow: 0 0 20px rgba(255,140,0,0.3);
+      flex-shrink: 0;
+    }
+    .meta {
+      flex: 1;
+      min-width: 280px;
+    }
+    .meta h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: #ff8c00;
+    }
+    .episodes {
+      margin-top: 20px;
+    }
+    .episode-btn {
+      display: inline-block;
+      margin: 6px;
+      padding: 10px 18px;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: 0.2s;
+      font-weight: 500;
+    }
+    .episode-btn:hover {
+      background: #ff8c00;
+      color: #000;
+      border-color: #ff8c00;
+    }
+    .quality-selector {
+      margin: 15px 0;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .quality-selector select {
+      padding: 8px 15px;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    /* Видеоплеер */
+    .player-wrapper {
+      margin-top: 25px;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(0,0,0,0.7);
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .video-js {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16/9;
+    }
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 15px;
+      color: #ff8c00;
+      cursor: pointer;
+      font-size: 1rem;
+      text-decoration: underline;
+    }
+    footer {
+      text-align: center;
+      padding: 15px;
+      color: #666;
+      font-size: 0.8rem;
+      border-top: 1px solid #222;
+    }
+    /* Скрытые элементы */
+    .hidden {
+      display: none !important;
+    }
+    @media (max-width: 600px) {
+      .poster {
+        width: 160px;
+      }
+      header {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo" id="homeBtn">🍥 AniFree</div>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Поиск аниме..." autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+  </header>
 
+  <div class="container" id="app">
+    <!-- Главная страница -->
+    <div id="homeView">
+      <div class="section-title">🔥 Последние обновления</div>
+      <div class="grid" id="updatesGrid"></div>
+    </div>
+
+    <!-- Страница тайтла -->
+    <div id="titleView" class="hidden">
+      <div class="back-btn" id="backBtn">← На главную</div>
+      <div class="title-view">
+        <img class="poster" id="titlePoster" src="" alt="Постер">
+        <div class="meta">
+          <h1 id="titleName"></h1>
+          <p id="titleDesc"></p>
+          <div class="quality-selector">
+            <span>Качество:</span>
+            <select id="qualitySelect"></select>
+          </div>
+          <div class="episodes" id="episodesList"></div>
+        </div>
+      </div>
+      <div class="player-wrapper hidden" id="playerContainer">
+        <video id="videoPlayer" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" crossorigin="anonymous"></video>
+      </div>
+    </div>
+  </div>
+
+  <footer>Данные предоставлены AniLibria API. Для личного использования.</footer>
+
+  <!-- Скрипты -->
+  <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+  <!-- videojs-http-streaming для HLS -->
+  <script src="https://cdn.jsdelivr.net/npm/@videojs/http-streaming@3.10.0/dist/videojs-http-streaming.min.js"></script>
+
+  <script>
+    (function() {
+      const API = 'https://api.anilibria.tv/v2';
+      
+      // Текущий тайтл и плеер
+      let currentTitle = null;
+      let player = null;
+
+      // DOM элементы
+      const homeView = document.getElementById('homeView');
+      const titleView = document.getElementById('titleView');
+      const updatesGrid = document.getElementById('updatesGrid');
+      const searchInput = document.getElementById('searchInput');
+      const searchResults = document.getElementById('searchResults');
+      const titlePoster = document.getElementById('titlePoster');
+      const titleName = document.getElementById('titleName');
+      const titleDesc = document.getElementById('titleDesc');
+      const episodesList = document.getElementById('episodesList');
+      const qualitySelect = document.getElementById('qualitySelect');
+      const playerContainer = document.getElementById('playerContainer');
+      const videoElement = document.getElementById('videoPlayer');
+
+      // Инициализация
+      async function init() {
+        await loadUpdates();
+        setupSearch();
+        setupNavigation();
+      }
+
+      // Загрузка последних обновлений
+      async function loadUpdates() {
+        try {
+          const resp = await fetch(`${API}/getUpdates?limit=24`);
+          const data = await resp.json();
+          if (data && data.items) {
+            renderCards(data.items, updatesGrid);
+          }
+        } catch (err) {
+          console.error('Ошибка загрузки обновлений:', err);
+          updatesGrid.innerHTML = '<p style="color:#ff5555;">Не удалось загрузить список</p>';
+        }
+      }
+
+      // Рендер сетки карточек
+      function renderCards(items, container) {
+        container.innerHTML = '';
+        items.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${item.posters?.medium?.url || 'https://via.placeholder.com/300x450/1a1a1a/ff8c00?text=No+Image'}" alt="${item.names?.ru || item.code}">
+            <div class="info">
+              <div class="name">${item.names?.ru || item.names?.en || 'Без названия'}</div>
+              <div class="details">${item.season ? 'Сезон '+item.season : ''} ${item.year ? '· '+item.year : ''}</div>
+            </div>
+          `;
+          card.addEventListener('click', () => openTitle(item));
+          container.appendChild(card);
+        });
+      }
+
+      // Поиск
+      async function performSearch(query) {
+        if (!query.trim()) {
+          searchResults.classList.remove('active');
+          return;
+        }
+        try {
+          const resp = await fetch(`${API}/search?search=${encodeURIComponent(query)}`);
+          const data = await resp.json();
+          if (data && data.items && data.items.length) {
+            renderSearchResults(data.items);
+          } else {
+            searchResults.innerHTML = '<div style="padding:15px;">Ничего не найдено</div>';
+            searchResults.classList.add('active');
+          }
+        } catch (err) {
+          console.error('Ошибка поиска:', err);
+        }
+      }
+
+      function renderSearchResults(items) {
+        searchResults.innerHTML = '';
+        items.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'search-item';
+          div.innerHTML = `
+            <img src="${item.posters?.small?.url || 'https://via.placeholder.com/40x56/1a1a1a/ff8c00?text=?'}" alt="">
+            <span class="title">${item.names?.ru || item.names?.en || item.code}</span>
+          `;
+          div.addEventListener('click', () => {
+            openTitle(item);
+            searchResults.classList.remove('active');
+            searchInput.value = '';
+          });
+          searchResults.appendChild(div);
+        });
+        searchResults.classList.add('active');
+      }
+
+      function setupSearch() {
+        let timer;
+        searchInput.addEventListener('input', () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => performSearch(searchInput.value), 400);
+        });
+        searchInput.addEventListener('focus', () => {
+          if (searchInput.value.trim()) searchResults.classList.add('active');
+        });
+        document.addEventListener('click', (e) => {
+          if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.classList.remove('active');
+          }
+        });
+      }
+
+      // Навигация
+      function setupNavigation() {
+        document.getElementById('homeBtn').addEventListener('click', showHome);
+        document.getElementById('backBtn').addEventListener('click', showHome);
+      }
+
+      function showHome() {
+        homeView.classList.remove('hidden');
+        titleView.classList.add('hidden');
+        if (player) {
+          player.dispose();
+          player = null;
+        }
+        playerContainer.classList.add('hidden');
+        currentTitle = null;
+      }
+
+      async function openTitle(item) {
+        // item может быть кратким от поиска/апдейтов, нужен полный запрос
+        try {
+          const resp = await fetch(`${API}/getTitle?code=${item.code}`);
+          const data = await resp.json();
+          if (!data || !data.names) throw new Error('Нет данных');
+          currentTitle = data;
+          renderTitleView(currentTitle);
+          homeView.classList.add('hidden');
+          titleView.classList.remove('hidden');
+          window.scrollTo(0,0);
+        } catch (err) {
+          alert('Не удалось загрузить информацию о тайтле');
+          console.error(err);
+        }
+      }
+
+      function renderTitleView(title) {
+        const posterUrl = title.posters?.medium?.url || title.posters?.original?.url || 'https://via.placeholder.com/300x450/1a1a1a/ff8c00?text=No+Image';
+        titlePoster.src = posterUrl;
+        titleName.textContent = title.names?.ru || title.names?.en || title.code;
+        titleDesc.textContent = title.description || 'Описание отсутствует';
+
+        // Качества
+        const qualities = title.player?.series || {};
+        qualitySelect.innerHTML = '';
+        Object.keys(qualities).sort((a,b) => parseInt(b)-parseInt(a)).forEach(q => {
+          const opt = document.createElement('option');
+          opt.value = q;
+          opt.textContent = q + 'p';
+          qualitySelect.appendChild(opt);
+        });
+
+        // Эпизоды
+        const totalEpisodes = title.episodes?.total || Object.keys(title.player?.series || {}).length || 0;
+        const selectedEpisodes = Array.from({length: totalEpisodes}, (_, i) => i+1);
+        episodesList.innerHTML = '';
+        selectedEpisodes.forEach(ep => {
+          const btn = document.createElement('button');
+          btn.className = 'episode-btn';
+          btn.textContent = ep;
+          btn.addEventListener('click', () => playEpisode(ep));
+          episodesList.appendChild(btn);
+        });
+
+        // Сброс плеера
+        if (player) {
+          player.dispose();
+          player = null;
+        }
+        playerContainer.classList.add('hidden');
+      }
+
+      function playEpisode(episode) {
+        if (!currentTitle) return;
+        const quality = qualitySelect.value;
+        const host = currentTitle.player.host || 'cache.libria.fun';
+        const hash = currentTitle.player.series[quality];
+        if (!hash) {
+          alert('Качество недоступно для этого эпизода');
+          return;
+        }
+        const m3u8 = `https://${host}/videos/media/ts/${currentTitle.id}/1/${episode}/${quality}/${hash}.m3u8?countryIso=A&isAuthorized=0&isWithVideoAds=0&isWithVideoAdsAlways=0`;
+
+        // Показываем плеер
+        playerContainer.classList.remove('hidden');
+
+        // Если плеера нет — инициализируем
+        if (!player) {
+          player = videojs(videoElement, {
+            controls: true,
+            autoplay: false,
+            preload: 'auto',
+            html5: {
+              nativeTextTracks: false,
+              hls: { overrideNative: true }
+            }
+          });
+        }
+
+        // Меняем источник
+        player.src({
+          src: m3u8,
+          type: 'application/x-mpegURL'
+        });
+        player.play().catch(e => console.log('Автовоспроизведение заблокировано браузером'));
+      }
+
+      // Запуск
+      init();
+    })();
+  </script>
+</body>
+</html>
