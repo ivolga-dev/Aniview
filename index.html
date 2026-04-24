@@ -3,153 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AnimeStream Ultra</title>
+    <title>AnimeStream - Stable</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: sans-serif; background: #0f1116; color: #fff; }
-        .header { background: #1a1d24; padding: 15px 20px; border-bottom: 2px solid #3a7bd5; sticky; top: 0; z-index: 100; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0a0b10; color: #eee; }
+        .header { background: #15171e; padding: 15px 20px; border-bottom: 2px solid #3a7bd5; display: flex; justify-content: space-between; align-items: center; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .search-section { display: flex; gap: 10px; margin-bottom: 20px; }
-        .search-box { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1d24; color: #fff; outline: none; }
-        .search-btn { padding: 12px 20px; background: #3a7bd5; border: none; border-radius: 8px; color: #fff; cursor: pointer; font-weight: bold; }
-        .content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
-        .anime-card { background: #1a1d24; border-radius: 10px; overflow: hidden; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
-        .anime-card:hover { border-color: #3a7bd5; transform: translateY(-3px); }
-        .anime-poster { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
-        .anime-info { padding: 10px; font-size: 0.85rem; text-align: center; }
-
-        .player-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; overflow-y: auto; }
-        .player-modal.active { display: block; }
-        .modal-content { max-width: 900px; margin: 20px auto; padding: 10px; }
-        .close-btn { float: right; font-size: 30px; color: #fff; background: none; border: none; cursor: pointer; padding: 0 10px 10px; }
-        .player-container { background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 16/9; width: 100%; border: 1px solid #333; display: flex; align-items: center; justify-content: center; }
+        .search-box { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #2d3446; background: #15171e; color: #fff; margin-bottom: 20px; }
+        .content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .anime-card { background: #15171e; border-radius: 10px; overflow: hidden; cursor: pointer; transition: 0.2s; position: relative; }
+        .anime-card:hover { transform: scale(1.03); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .anime-poster { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
+        .anime-info { padding: 8px; font-size: 0.8rem; font-weight: bold; text-align: center; }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 1000; padding: 10px; overflow-y: auto; }
+        .modal.active { display: block; }
+        .modal-content { max-width: 1000px; margin: 0 auto; }
+        .close-btn { color: #fff; font-size: 35px; cursor: pointer; float: right; background: none; border: none; }
+        .player-wrap { background: #000; width: 100%; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; margin-top: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid #333; }
         iframe { width: 100%; height: 100%; border: none; }
-        .anime-details { margin-top: 20px; padding: 10px; color: #aaa; font-size: 0.95rem; }
-        .loading { color: #3a7bd5; font-weight: bold; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% {opacity: 0.5;} 50% {opacity: 1;} 100% {opacity: 0.5;} }
-        .error { color: #ff4d4d; text-align: center; padding: 20px; }
+        
+        .status-msg { padding: 20px; text-align: center; line-height: 1.6; }
+        .btn-link { display: inline-block; margin-top: 15px; padding: 10px 20px; background: #3a7bd5; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .loading-spin { border: 3px solid #333; border-top: 3px solid #3a7bd5; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div class="header"><h2>🎬 AnimeStream</h2></div>
+<div class="header">
+    <h2 style="color:#3a7bd5">🎬 AnimeStream</h2>
+</div>
 
-    <div class="container">
-        <div class="search-section">
-            <input type="text" class="search-box" id="searchInput" placeholder="Введите название аниме...">
-            <button class="search-btn" onclick="searchAnime()">Найти</button>
-        </div>
-        <div id="animeGrid" class="content-grid"></div>
+<div class="container">
+    <input type="text" class="search-box" id="searchInput" placeholder="Поиск (например: Наруто, Фрирен)..." onkeypress="if(event.key==='Enter') search()">
+    <div id="grid" class="content-grid"></div>
+</div>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closePlayer()">&times;</button>
+        <div id="playerWrap" class="player-wrap"></div>
+        <div id="details" style="padding:20px"></div>
     </div>
+</div>
 
-    <div id="playerModal" class="player-modal">
-        <div class="modal-content">
-            <button class="close-btn" onclick="closePlayer()">&times;</button>
-            <div class="player-container" id="videoContainer"></div>
-            <div id="animeDetails" class="anime-details"></div>
-        </div>
-    </div>
+<script>
+    const KODIK_TOKEN = '77a064344baaef3988583486337581ff';
+    
+    // Загрузка топа при старте
+    async function start() {
+        const res = await fetch('https://api.jikan.moe/v4/top/anime?limit=20');
+        const data = await res.json();
+        render(data.data);
+    }
 
-    <script>
-        const JIKAN_API = 'https://api.jikan.moe/v4';
-        const KODIK_TOKEN = '77a064344baaef3988583486337581ff';
+    async function search() {
+        const q = document.getElementById('searchInput').value;
+        if(!q) return;
+        document.getElementById('grid').innerHTML = '<div class="status-msg">Ищем...</div>';
+        const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(q)}&limit=20`);
+        const data = await res.json();
+        render(data.data);
+    }
 
-        async function loadCategory() {
-            const grid = document.getElementById('animeGrid');
-            grid.innerHTML = '<div class="loading">Загрузка топа...</div>';
-            try {
-                const res = await fetch(`${JIKAN_API}/top/anime?limit=18`);
-                const data = await res.json();
-                renderGrid(data.data);
-            } catch (e) { grid.innerHTML = '<div class="error">Ошибка загрузки API</div>'; }
-        }
+    function render(list) {
+        document.getElementById('grid').innerHTML = list.map(a => `
+            <div class="anime-card" onclick="openAnime(${a.mal_id}, '${a.title.replace(/'/g,"")}')">
+                <img src="${a.images.jpg.large_image_url}" class="anime-poster">
+                <div class="anime-info">${a.title}</div>
+            </div>
+        `).join('');
+    }
 
-        async function searchAnime() {
-            const q = document.getElementById('searchInput').value;
-            if(!q) return;
-            const grid = document.getElementById('animeGrid');
-            grid.innerHTML = '<div class="loading">Поиск...</div>';
-            try {
-                const res = await fetch(`${JIKAN_API}/anime?q=${encodeURIComponent(q)}&limit=18`);
-                const data = await res.json();
-                renderGrid(data.data);
-            } catch (e) { grid.innerHTML = '<div class="error">Ничего не найдено</div>'; }
-        }
+    async function openAnime(id, title) {
+        const modal = document.getElementById('modal');
+        const wrap = document.getElementById('playerWrap');
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        wrap.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center"><div class="loading-spin"></div><div>Проверяем базы данных...</div></div>';
+        
+        try {
+            const infoRes = await fetch(`https://api.jikan.moe/v4/anime/${id}`);
+            const infoData = await infoRes.json();
+            const anime = infoData.data;
+            
+            document.getElementById('details').innerHTML = `<h3>${anime.title}</h3><p style="color:#888; margin-top:10px">${anime.synopsis || ''}</p>`;
 
-        function renderGrid(list) {
-            document.getElementById('animeGrid').innerHTML = list.map(a => `
-                <div class="anime-card" onclick="openAnime(${a.mal_id})">
-                    <img src="${a.images.jpg.large_image_url}" class="anime-poster">
-                    <div class="anime-info">${a.title}</div>
-                </div>
-            `).join('');
-        }
-
-        async function openAnime(id) {
-            const modal = document.getElementById('playerModal');
-            const container = document.getElementById('videoContainer');
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            container.innerHTML = '<div class="loading">Ищем плеер...</div>';
-
-            try {
-                const infoRes = await fetch(`${JIKAN_API}/anime/${id}`);
-                const info = await infoRes.json();
-                const anime = info.data;
-                
-                document.getElementById('animeDetails').innerHTML = `
-                    <h2 style="color:#fff; margin-bottom:5px">${anime.title}</h2>
-                    <p style="margin-bottom:10px">Тип: ${anime.type} | Оценка: ${anime.score || '?'}</p>
-                    <p>${anime.synopsis || 'Нет описания.'}</p>
-                `;
-
-                // Проверка: если это не аниме (манга, новелла), сразу пишем ошибку
-                if (anime.type.toLowerCase().includes('manga') || anime.type.toLowerCase().includes('novel')) {
-                    container.innerHTML = '<div class="error">Это манга. Видео доступно только для аниме-адаптаций.</div>';
-                    return;
-                }
-
-                // Логика поиска с тайм-аутом (7 секунд)
-                let found = false;
-                const callbackName = 'kodik_cb_' + id;
-                
-                const timer = setTimeout(() => {
-                    if (!found) {
-                        container.innerHTML = '<div class="error">Поиск занял слишком много времени. Попробуйте другое аниме или отключите VPN/AdBlock.</div>';
-                        delete window[callbackName];
-                    }
-                }, 7000);
-
-                window[callbackName] = function(data) {
-                    found = true;
-                    clearTimeout(timer);
-                    if (data.results && data.results.length > 0) {
-                        let link = data.results[0].link;
-                        if(!link.startsWith('http')) link = 'https:' + link;
-                        container.innerHTML = `<iframe src="${link}" allowfullscreen></iframe>`;
-                    } else {
-                        container.innerHTML = '<div class="error">Видео не найдено в базе плеера.</div>';
-                    }
-                    delete window[callbackName];
-                };
-
-                const script = document.createElement('script');
-                script.src = `https://kodikapi.com/search?token=${KODIK_TOKEN}&shikimori_id=${id}&callback=${callbackName}`;
-                document.body.appendChild(script);
-                script.onload = () => script.remove();
-
-            } catch (e) {
-                container.innerHTML = '<div class="error">Ошибка подключения.</div>';
+            // Если это манга
+            if(anime.type === 'Manga' || anime.type === 'Novel') {
+                wrap.innerHTML = '<div class="status-msg">⚠️ Это манга/новелла. Аниме-адаптации пока нет.</div>';
+                return;
             }
-        }
 
-        function closePlayer() {
-            document.getElementById('playerModal').classList.remove('active');
-            document.getElementById('videoContainer').innerHTML = '';
-            document.body.style.overflow = 'auto';
-        }
+            // Попытка загрузки через Kodik с зеркалом
+            let found = false;
+            const cbName = 'callback_' + id;
+            
+            const timeout = setTimeout(() => {
+                if(!found) {
+                    showFallback(title);
+                }
+            }, 6000);
 
-        loadCategory();
-    </script>
+            window[cbName] = function(data) {
+                found = true;
+                clearTimeout(timeout);
+                if(data.results && data.results.length > 0) {
+                    let url = data.results[0].link;
+                    if(!url.startsWith('http')) url = 'https:' + url;
+                    wrap.innerHTML = `<iframe src="${url}" allowfullscreen></iframe>`;
+                } else {
+                    showFallback(title);
+                }
+                delete window[cbName];
+            };
+
+            const script = document.createElement('script');
+            // Используем kodikapi.info как альтернативный домен
+            script.src = `https://kodikapi.com/search?token=${KODIK_TOKEN}&shikimori_id=${id}&callback=${cbName}`;
+            script.onerror = () => showFallback(title);
+            document.body.appendChild(script);
+
+        } catch(e) {
+            showFallback(title);
+        }
+    }
+
+    function showFallback(title) {
+        const wrap = document.getElementById('playerWrap');
+        wrap.innerHTML = `
+            <div class="status-msg">
+                <p>База данных не ответила (возможно, блокировка в вашей сети).</p>
+                <a href="https://yandex.ru/search/?text=смотреть+аниме+${encodeURIComponent(title)}" target="_blank" class="btn-link">Смотреть в поиске</a>
+                <p style="font-size:12px; margin-top:10px; color:#666">Попробуйте обновить страницу или выключить VPN.</p>
+            </div>
+        `;
+    }
+
+    function closePlayer() {
+        document.getElementById('modal').classList.remove('active');
+        document.getElementById('playerWrap').innerHTML = '';
+        document.body.style.overflow = 'auto';
+    }
+
+    start();
+</script>
 </body>
 </html>
