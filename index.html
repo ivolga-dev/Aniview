@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anime Player</title>
+<title>AnimeStream</title>
 
 <style>
 body {
@@ -17,10 +17,29 @@ body {
     padding:15px;
     text-align:center;
     background:#1e1e2f;
+    font-size:22px;
 }
 
 .container {
     padding:15px;
+}
+
+.search-box {
+    margin-bottom:15px;
+}
+
+input {
+    padding:10px;
+    width:70%;
+    border-radius:10px;
+    border:none;
+}
+
+button {
+    padding:10px;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
 }
 
 .grid {
@@ -34,10 +53,20 @@ body {
     border-radius:10px;
     overflow:hidden;
     cursor:pointer;
+    transition:0.3s;
+}
+
+.card:hover {
+    transform:scale(1.05);
 }
 
 .card img {
     width:100%;
+}
+
+.title {
+    padding:5px;
+    font-size:14px;
 }
 
 .player {
@@ -51,6 +80,10 @@ iframe {
     border-radius:10px;
 }
 
+.episodes {
+    margin-top:10px;
+}
+
 .episodes button {
     margin:5px;
     padding:8px;
@@ -61,12 +94,15 @@ iframe {
 
 <body>
 
-<div class="header">🎬 Anime Player</div>
+<div class="header">🎬 AnimeStream</div>
 
 <div class="container">
 
-<input id="search" placeholder="Поиск..." onkeypress="if(event.key==='Enter')search()">
-<button onclick="search()">Поиск</button>
+<div class="search-box">
+    <input id="search" placeholder="Поиск аниме..." 
+           onkeypress="if(event.key==='Enter') searchAnime()">
+    <button onclick="searchAnime()">Поиск</button>
+</div>
 
 <div id="grid" class="grid"></div>
 
@@ -78,51 +114,65 @@ iframe {
 <script>
 const API = "https://api.jikan.moe/v4";
 
+// загрузка топа
 async function loadTop() {
     const res = await fetch(API + "/top/anime");
     const data = await res.json();
     render(data.data);
 }
 
+// рендер карточек (ИСПРАВЛЕНО)
 function render(list) {
     const grid = document.getElementById("grid");
 
     grid.innerHTML = list.map(a => `
-        <div class="card" onclick="openAnime('${a.title}')">
+        <div class="card" data-title="${a.title.replace(/"/g, '&quot;')}">
             <img src="${a.images.jpg.image_url}">
-            <div style="padding:5px">${a.title}</div>
+            <div class="title">${a.title}</div>
         </div>
     `).join("");
+
+    // обработчик клика
+    document.querySelectorAll(".card").forEach(card => {
+        card.addEventListener("click", () => {
+            openAnime(card.dataset.title);
+        });
+    });
 }
 
-async function search() {
-    const q = document.getElementById("search").value;
+// поиск
+async function searchAnime() {
+    const q = document.getElementById("search").value.trim();
     if (!q) return;
 
-    const res = await fetch(API + "/anime?q=" + q);
+    const res = await fetch(API + "/anime?q=" + q + "&limit=20");
     const data = await res.json();
     render(data.data);
 }
 
+// открытие аниме
 function openAnime(title) {
-    // пример — встраиваемый поиск (НЕ гарантирует 100% совпадение)
     const player = document.getElementById("player");
     const episodes = document.getElementById("episodes");
 
+    // первый эпизод
     player.innerHTML = `
         <iframe src="https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(title + ' anime episode 1')}"></iframe>
     `;
 
-    // фейковые серии (демо логика)
+    // список серий (демо)
     episodes.innerHTML = "";
 
-    for(let i=1;i<=12;i++){
+    for (let i = 1; i <= 12; i++) {
         episodes.innerHTML += `
-            <button onclick="playEpisode('${title}', ${i})">Серия ${i}</button>
+            <button onclick="playEpisode('${title.replace(/'/g,"")} ', ${i})">
+                Серия ${i}
+            </button>
         `;
     }
 }
 
+// переключение серии
 function playEpisode(title, ep) {
     const player = document.getElementById("player");
 
@@ -131,6 +181,7 @@ function playEpisode(title, ep) {
     `;
 }
 
+// старт
 loadTop();
 </script>
 
