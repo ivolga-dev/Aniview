@@ -1,28 +1,21 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AniView — Аниме Онлайн</title>
+    <title>AniView — Advanced Player</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #050505; color: #e4e4e7; font-family: sans-serif; margin: 0; }
-        .anime-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; padding: 20px; }
-        .card { position: relative; border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.2s; background: #111; }
-        .card:hover { transform: scale(1.03); }
-        .card img { width: 100%; aspect-ratio: 3/4.5; object-cover: cover; }
-        .card-title { padding: 8px; font-size: 12px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; align-items: center; justify-content: center; }
-        .player-container { width: 95%; max-width: 1000px; background: #000; border-radius: 16px; overflow: hidden; position: relative; }
-        .iframe-wrapper { position: relative; padding-top: 56.25%; }
-        .iframe-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
-        .close-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; z-index: 110; }
-        .node-tabs { display: flex; gap: 10px; padding: 10px; background: #111; overflow-x: auto; }
-        .node-btn { padding: 6px 12px; border-radius: 6px; font-size: 11px; background: #222; border: 1px solid #333; color: #aaa; cursor: pointer; white-space: nowrap; }
-        .node-btn.active { background: #2563eb; color: white; border-color: #3b82f6; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { background: #0a0a0c; color: #f4f4f5; font-family: 'Inter', sans-serif; margin: 0; }
+        .glass { background: rgba(18, 18, 22, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        .player-frame { background: #000; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        iframe { width: 100%; height: 100%; border: none; }
+        .tab-active { background: #3b82f6; color: white; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
     </style>
 </head>
 <body>
@@ -32,98 +25,125 @@
         const { useState, useEffect } = React;
 
         const App = () => {
-            const [list, setList] = useState([]);
-            const [search, setSearch] = useState('');
+            const [query, setQuery] = useState('');
+            const [results, setResults] = useState([]);
+            const [top, setTop] = useState([]);
             const [selected, setSelected] = useState(null);
-            const [node, setNode] = useState(0);
-            const [loading, setLoading] = useState(true);
+            const [activeSource, setActiveSource] = useState(0);
 
             useEffect(() => {
-                fetchData();
+                // Загрузка популярных аниме при старте
+                fetch("https://shikimori.one/api/animes?limit=24&order=popularity&kind=tv")
+                    .then(r => r.json())
+                    .then(data => setTop(data));
             }, []);
 
-            const fetchData = async (query = '') => {
-                setLoading(true);
-                const url = query 
-                    ? `https://shikimori.one/api/animes?search=${encodeURIComponent(query)}&limit=24`
-                    : `https://shikimori.one/api/animes?limit=24&order=popularity`;
-                try {
-                    const res = await fetch(url);
-                    const data = await res.json();
-                    setList(data);
-                } catch (e) {
-                    console.error("Fetch error", e);
-                }
-                setLoading(false);
-            };
-
-            const handleSearch = (e) => {
+            const searchAnime = async (e) => {
                 e.preventDefault();
-                fetchData(search);
+                if (!query) return;
+                const r = await fetch(`https://shikimori.one/api/animes?search=${encodeURIComponent(query)}&limit=30`);
+                const data = await r.json();
+                setResults(data);
             };
 
-            const mirrors = selected ? [
-                { name: "Зеркало 1", url: `https://www.bread-m.ru/player/index.php?shikimori=${selected.id}` },
-                { name: "Зеркало 2", url: `https://black-m.ru/player/index.php?shikimori=${selected.id}` },
-                { name: "Kodik ID", url: `https://kodik.info/find-player?shikimori_id=${selected.id}` },
-                { name: "ShikiCinema", url: `https://shikicinema.org/embed/${selected.id}` }
-            ] : [];
+            const getSources = (anime) => {
+                const sId = anime.id;
+                // На основе анализа animekamui и других стабильных сайтов
+                return [
+                    { name: "Основной (Kodik)", url: `https://kodik.info/find-player?shikimori_id=${sId}` },
+                    { name: "Альтернатива (Shiki)", url: `https://shikicinema.org/embed/${sId}` },
+                    { name: "Зеркало (Bread)", url: `https://www.bread-m.ru/player/index.php?shikimori=${sId}` },
+                    { name: "Запасной (Libria)", url: `https://api.allvideo.monster/shikimori/${sId}` }
+                ];
+            };
 
             return (
-                <div>
-                    <nav className="p-4 flex items-center justify-between border-b border-zinc-800 sticky top-0 bg-black z-50">
-                        <h1 className="font-bold text-xl text-blue-500 cursor-pointer" onClick={() => {setSearch(''); fetchData();}}>AniView</h1>
-                        <form onSubmit={handleSearch} className="flex-1 max-w-md mx-4">
+                <div className="min-h-screen pb-20">
+                    <nav className="fixed top-0 w-full z-50 glass border-b border-white/5 px-6 py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => {setResults([]); setQuery('');}}>
+                            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-black italic text-white shadow-lg shadow-blue-600/20">A</div>
+                            <span className="font-black text-xl tracking-tighter uppercase">AniView</span>
+                        </div>
+
+                        <form onSubmit={searchAnime} className="flex-grow max-w-xl mx-8">
                             <input 
-                                type="text" 
-                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-sm outline-none focus:border-blue-500"
-                                placeholder="Найти аниме..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 px-6 text-sm focus:outline-none focus:border-blue-500 transition-all"
+                                placeholder="Введите название (например: Доктор Стоун)..."
+                                value={query}
+                                onChange={e => setQuery(e.target.value)}
                             />
                         </form>
+
+                        <div className="hidden md:block text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-white/5 px-4 py-2 rounded-full border border-white/5">
+                            Status: <span className="text-green-500">Bypassing Blocks</span>
+                        </div>
                     </nav>
 
-                    {loading ? (
-                        <div className="p-10 text-center text-zinc-500">Загрузка контента...</div>
-                    ) : (
-                        <div className="anime-grid">
-                            {list.map(anime => (
-                                <div key={anime.id} className="card" onClick={() => { setSelected(anime); setNode(0); }}>
-                                    <img src={`https://shikimori.one${anime.image.original}`} alt={anime.name} />
-                                    <div className="card-title">{anime.russian || anime.name}</div>
+                    <main className="pt-28 px-6 max-w-[1400px] mx-auto">
+                        <h2 className="text-2xl font-black uppercase italic tracking-tighter mb-8 flex items-center gap-4">
+                            {results.length > 0 ? "Результаты поиска" : "Тренды сезона"}
+                            <div className="h-px flex-grow bg-white/5"></div>
+                        </h2>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                            {(results.length > 0 ? results : top).map(anime => (
+                                <div key={anime.id} className="group cursor-pointer" onClick={() => {setSelected(anime); setActiveSource(0);}}>
+                                    <div className="relative aspect-[3/4.5] rounded-[1.5rem] overflow-hidden bg-zinc-900 border border-white/5 shadow-xl transition-all group-hover:scale-[1.02] group-hover:shadow-blue-500/10">
+                                        <img 
+                                            src={`https://shikimori.one${anime.image.original}`} 
+                                            className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 transition-all duration-500"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+                                        <div className="absolute top-3 right-3 bg-blue-600 px-2 py-1 rounded-lg text-[10px] font-bold text-white uppercase">★ {anime.score}</div>
+                                        <div className="absolute bottom-4 left-4 right-4">
+                                            <p className="text-white font-bold text-xs uppercase line-clamp-2 leading-tight tracking-tight">{anime.russian || anime.name}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
-                    )}
+                    </main>
 
                     {selected && (
-                        <div className="overlay">
-                            <div className="player-container">
-                                <button className="close-btn" onClick={() => setSelected(null)}>✕</button>
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl" onClick={() => setSelected(null)}></div>
+                            <div className="relative w-full max-w-5xl aspect-video glass rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl">
                                 
-                                <div className="iframe-wrapper">
+                                <div className="flex-grow relative bg-black">
                                     <iframe 
-                                        src={mirrors[node].url} 
-                                        allowFullScreen 
-                                    />
+                                        src={getSources(selected)[activeSource].url} 
+                                        allowFullScreen
+                                    ></iframe>
+                                    
+                                    <div className="absolute top-6 left-6 flex flex-wrap gap-2">
+                                        {getSources(selected).map((s, i) => (
+                                            <button 
+                                                key={i}
+                                                onClick={() => setActiveSource(i)}
+                                                className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all border ${activeSource === i ? 'tab-active border-transparent' : 'bg-black/60 text-zinc-400 border-white/5 hover:text-white'}`}
+                                            >
+                                                {s.name}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <button onClick={() => setSelected(null)} className="absolute top-6 right-6 bg-black/60 p-2.5 rounded-full text-white hover:bg-red-600 transition border border-white/10">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                                    </button>
                                 </div>
 
-                                <div className="node-tabs">
-                                    {mirrors.map((m, i) => (
-                                        <button 
-                                            key={i} 
-                                            className={`node-btn ${node === i ? 'active' : ''}`}
-                                            onClick={() => setNode(i)}
-                                        >
-                                            {m.name}
-                                        </button>
-                                    ))}
-                                </div>
-                                
-                                <div className="p-4">
-                                    <div className="text-white font-bold">{selected.russian || selected.name}</div>
-                                    <div className="text-zinc-500 text-xs mt-1">Если плеер не грузится, переключите "Зеркало" выше.</div>
+                                <div className="p-6 bg-zinc-950/50 flex items-center justify-between border-t border-white/5">
+                                    <div>
+                                        <h3 className="text-white font-black text-xl uppercase italic tracking-tighter">{selected.russian || selected.name}</h3>
+                                        <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1 tracking-widest">
+                                            Status: {selected.status} • Server: {getSources(selected)[activeSource].name}
+                                        </p>
+                                    </div>
+                                    <div className="hidden sm:block">
+                                        <span className="text-[9px] font-black text-blue-500 border border-blue-500/20 px-4 py-2 rounded-full uppercase tracking-[0.2em]">
+                                            Secure Streaming
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
